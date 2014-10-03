@@ -1,0 +1,40 @@
+require 'base64'
+require 'json'
+credential_hash = [
+      [:ANZ,               :CreditCardClient, 'A125726837',     'owenwu',         '2wsx1qaz'],
+      [:AmericanExpress,   :CreditCardClient, nil,              'minsheng',       'xup6xu4z'],
+      [:BankOfTaiwan,      :Client,           'A226030654',     'clairelo',       'Howrich123'],
+      [:ChangHwaBank,      :Client,           'B200017858',     'suzy4618',       'howrich168'],
+      [:ChinaTrust,        :Client,           'A226030654',     'clairelo67',     'Howrich123'],
+      [:CathayUnited,      :Client,           'B200017858',     'suzy4618',       '4618'],
+      [:CathayUnited,      :CreditCardClient, 'A226030654',     'clairelo67',     '0607'],
+      [:CitiBank,          :Client,           nil,              'clairelo67',     'howrich67'],
+      [:CitiBank,          :CreditCardClient, nil,              'enricheers1201', 'howrich168'],
+      [:EsunBank,          :Client,           'N123075258',     'PHILOS324',      '12howrich21'],
+      [:EsunBank,          :CreditCardClient, 'N123075258',     'PHILOS324',      '12howrich21'],
+      [:FEIB,              :Client,           'F125241950',     'dylan1104',      '1qaz2wsx'],
+      [:FEIB,              :CreditCardClient, 'G121398468',     'samtien0223',    'M4xup608'],
+      [:FirstBank,         :Client,           'A127798153',     'enricheers',     'howrich123'],
+      [:FirstBank,         :CreditCardClient, 'A127798153',     nil,              '11bizmark13'],
+      [:HSBC,              :CreditCardClient, 'F124875596',     'gordon1979',     'kan1979'],
+      [:HSBCDirect,        :Client,           '66269393',       'clairehsianglo', 'Howrich123'],
+      [:HuaNanBank,        :Client,           'A226030654',     'clairelo67',     '66269393'],
+      [:HuaNanBank,        :CreditCardClient, 'A127798153',     nil,              'rich168'],
+      [:LandBank,          :Client,           'A227643691',     'smallsun22',     'howrich168'],
+      [:MegaBank,          :Client,           'A227643691',     'smallsun22',     'rich123'],
+      [:PostOffice,        :Client,           '00014350694415', 'smallsun22',     'howrich123'],
+      [:SCSB,              :Client,           'E223014438',     'mandychao',      'mandy1234'],
+      [:ShinKongBank,      :Client,           'A102730539',     'clairelo67',     'howrich1'],
+      [:ShinKongBank,      :CreditCardClient, 'U120102567',     'c1234567',       'chen123'],
+      [:SinopacBank,       :Client,           'A226030654',     'clairelo67',     'Howrich123'],
+      [:SinopacBank,       :CreditCardClient, 'A226030654',     'clairelo67',     'Howrich123'],
+      [:StandardChartered, :Client,           'A127798153',     'lifong11',       'howrich168'],
+      [:TaipeiFubon,       :Client,           'N123075258',     'PHILOS324',      '12howrich21'],
+      [:TaipeiFubon,       :CreditCardClient, 'A102730539',     'clairelo67',     'howrich123'],
+      [:TaishinBank,       :Client,           'A226030654',     'clairelo67',     'Howrich6'],
+      [:TaishinBank,       :CreditCardClient, 'F225176816',     'clairelo67',     'howrich1'],
+      [:TaiwanBizBank,     :Client,           'B200017858',     'suzy4618',       'rich123', 'rich123'],
+      [:UnionBank,         :Client,           'A226030654',     'clairelo67',     '168168']]
+File.open('/home/lien/credential_encoded', 'w') do |f|
+  f.write Base64.encode64(Base64.encode64(credential_hash.to_json).reverse).gsub(/\n/, '')
+end

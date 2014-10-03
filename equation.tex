@@ -1,0 +1,12 @@
+\documentclass{article}
+\usepackage{mathtools}
+\pagestyle{empty}
+\DeclarePairedDelimiter\ceil{\lceil}{\rceil}
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+\begin{document}
+\begin{equation*}
+    \frac{x}{y} = x * \frac{1}{y} = x * \frac{1 * 2^{n}}{y * 2^{n}} = x * \frac{2^{n}}{y} * \frac{1}{2^{n}}
+    \ceil{\frac{x}{y}}
+    [\frac{x}{y}]
+\end{equation*}
+\end{document}
