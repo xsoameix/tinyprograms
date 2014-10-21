@@ -1,6 +1,13 @@
 #include <stdio.h>
 #include <stdint.h>
 
+// 如何用指標存取某個倍數 n 的元素？
+// examples:
+//   n == 3, => 0 3 6 9
+//   n == 4, => 0 4 8 12
+//   n == 5, => 0 5 10 15
+//   n == 6, => 0 6 12 18
+
 int
 main(void) {
   short * i = (short[]) {0,1,2,3,4,5,6,7,8,9,
