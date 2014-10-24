@@ -38,9 +38,11 @@ main(void) {
     printf("%hd ", ary[&(&ary[(int *) i])[ary]]);
   }
   puts("");
+  short another_ary = (short) 1;
   printf("%hd\n", 0[i]);
   printf("%hd\n", 1[i]);
   printf("%hd\n", 2[i]);
   printf("%hd\n", 3[i]);
+  printf("%hd\n", (&2[i])[2]);
   return 0;
 }
