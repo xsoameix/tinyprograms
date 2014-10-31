@@ -1,20 +1,25 @@
-struct Point
+require(
+  Point,
+  create_ary
+)
+
+struct(Point,
 
   x, y int
 
-  def new(x, y int) *Point
+  def(new(x, y int) *Point,
     &Point(x: x, y: y)
-  end
+  )
 
-  def move(x, y int)
+  def(move(x, y int),
     .x += x
     .y += y
-  end
-end
+  )
+)
 
-type APoint Point
+type(APoint, Point)
 
-def main
+def(main,
   len := scanf("%d\n")
   # len: int(class Int, value int)
 
@@ -34,14 +39,15 @@ def main
   )
   puts(ary)
 
-  func := (x)
+  func := def((x)
     * x += 1
-  end
+  )
   ary each(func)
-  ary each((x) * x += 1)
+  ary each(def((x) * x += 1))
   ary each(x, * x += 1)
   ary each(* it += 1)
   ary each(it.value)
+  ary each(.value)
 
   if(ary len == 1,
     ary[0] += 1,
@@ -66,8 +72,26 @@ def main
     Point new(0, 0)
   )
   # ary: &Array(class Array, type: Point, values)
-end
+)
 
-def create_ary(len int) *int
+def(main, puts("hello world"))
+def(main(argc, argv), puts("hello world"))
+def(main(argc int, argv []string) int, puts("hello world"))
+def(main int, puts("hello world"))
+
+def(create_ary(len int) *int,
   calloc(len, int)
-end
+  def((len int) int,
+    len + 1)
+)
+
+def(create_ary(len),
+  calloc(len, int)
+  def((len),
+    len + 1)
+)
+
+export(
+  Point,
+  create_ary
+)
