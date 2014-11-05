@@ -628,7 +628,7 @@ scan_ctoken(scan_t * scan) {
         state = SELF1;
       } else if (c == '}') {
         state = RBLOCK1;
-      } else if (c == '=') {
+      } else if (c == '!') {
         state = OVERRIDE1;
       } else if (c == ';') {
         state = STAT1;
@@ -715,45 +715,79 @@ parse_term(scan_t * scan, def_t def) {
   return tok;
 }
 
+typedef struct {
+  size_t len;
+  size_t capa;
+  void * objs;
+} ary_t;
+
 typedef union {
   struct {
-    tok_t name;
-  } normal;
+    ary_t name;
+  } nm; // normal
   struct {
-    tok_t ret;
+    ary_t ret;
     tok_t name;
-    tok_t arg;
-  } override;
+    ary_t arg;
+  } or; // override
 } meth_t;
 
 typedef struct {
   tok_t class;
   tok_t super;
   tok_t strukt;
-  size_t mlen;
-  size_t mcapa;
-  meth_t * meths;
+  ary_t meths;
+  utf_t * header;
+  utf_t * super_type;
+  utf_t * class_type;
+  utf_t * instance_type;
+  utf_t * class_name;
+  utf_t * instance_name;
+  utf_t * class_prefix;
+  utf_t * super_prefix;
+  utf_t * methods_name;
+  utf_t * instances_name;
+  utf_t * super_methods_name;
+  utf_t * super_instances_name;
+  utf_t * init_name;
 } class_t;
 
 void
-meth_new(class_t * class, size_t mcapa) {
-  class->mcapa = mcapa;
-  class->meths = calloc(mcapa, sizeof(meth_t));
+ary_new(ary_t * ary, size_t capa, size_t size) {
+  if (ary->objs != 0) {
+    printf("ary is already newed.\n");
+    exit(0);
+  }
+  ary->capa = capa;
+  ary->objs = calloc(capa, size);
 }
 
 void
-meth_add(class_t * class, meth_t meth) {
-  meth_t * meths = class->meths;
-  size_t mcapa = class->mcapa;
-  size_t mlen = class->mlen;
-  if (mlen >= mcapa) {
-    mcapa *= 2;
-    class->meths = realloc(meths, mcapa * sizeof(meth_t));
-    class->mcapa = mcapa;
+ary_add(ary_t * ary, void * obj, size_t size) {
+  if (ary->len >= ary->capa) {
+    ary->capa *= 2;
+    ary->objs = realloc(ary->objs, ary->capa * size);
   }
-  class->meths[mlen++] = meth;
-  class->mlen = mlen;
+  memcpy(ary->objs + size * ary->len++, obj, size);
 }
+
+#define meth_new(class, capa) \
+  ary_new(&(class)->meths, capa, sizeof(meth_t))
+
+#define meth_add(class, meth) \
+  ary_add(&(class)->meths, meth, sizeof(meth_t))
+
+#define meth_get(class, i) \
+  ((meth_t *) (class)->meths.objs)[i]
+
+#define tok_get(toks, i) \
+  ((tok_t *) (toks)->objs)[i]
+
+#define tok_new(toks) \
+  ary_new(toks, 1, sizeof(tok_t))
+
+#define tok_add(toks, tok) \
+  ary_add(toks, tok, sizeof(tok_t))
 
 utf_t *
 tok_str(tok_t * tok) {
@@ -763,6 +797,32 @@ tok_str(tok_t * tok) {
   strncpy(buf, tok->string, len);
   buf[len] = '\0';
   return buf;
+}
+
+void
+toks_print(ary_t * toks) {
+  printf("[");
+  size_t i = 0;
+  for (; i < toks->len; i++) {
+    printf("%s", tok_str(&tok_get(toks, i)));
+  }
+  printf("]");
+}
+
+void
+meth_del(class_t * class) {
+  size_t len = class->meths.len;
+  size_t i = 0;
+  for (; i < len; i++) {
+    meth_t * meth = &meth_get(class, i);
+    if (meth->or.name.string == NULL) {
+      free(meth->nm.name.objs);
+    } else {
+      free(meth->or.ret.objs);
+      free(meth->or.arg.objs);
+    }
+  }
+  free(class->meths.objs);
 }
 
 class_t
@@ -796,27 +856,216 @@ parse_header(utf_t * string, size_t size) {
     if (parse_test(&tok, RBLOCK)) {
       break;
     } else if (parse_test(&tok, OVERRIDE)) {
-      meth.override.name = tok;
+      meth.or.name = tok;
     } else if (parse_test(&tok, STAT)) {
-      meth_add(&class, meth);
+      meth_add(&class, &meth);
       meth = (meth_t) {0};
     } else {
-      if (meth.normal.name.string == NULL) {
-        meth.normal.name = tok;
-      } else if (meth.override.name.string == NULL) {
-        meth.normal.name.len += tok.len;
-      } else if (meth.override.arg.string == NULL) {
-        meth.override.arg = tok;
+      if (meth.nm.name.objs == NULL) {
+        tok_new(&meth.nm.name);
+        tok_add(&meth.nm.name, &tok);
+      } else if (meth.or.name.string == NULL) {
+        tok_add(&meth.or.ret, &tok);
+      } else if (meth.or.arg.objs == NULL) {
+        tok_new(&meth.or.arg);
+        tok_add(&meth.or.arg, &tok);
       } else {
-        meth.override.arg.len += tok.len;
+        tok_add(&meth.or.arg, &tok);
       }
     }
   }
+  free(meth.nm.name.objs);
   scan.scan_tok = scan_token;
   parse_match(&scan, TERM);
   parse_match(&scan, RBLOCK);
   puts("");
   return class;
+}
+
+int
+str_is_upcase(utf_t c) {
+  return c >= 'A' && c <= 'Z';
+}
+
+int
+str_is_dwcase(utf_t c) {
+  return c >= 'a' && c <= 'z';
+}
+
+size_t
+tok_word(utf_t * string, size_t len) {
+  size_t upwords = 0;
+  size_t i = 0;
+  size_t prev = i;
+  while (i < len) {
+    utf_t * str = &string[i];
+    size_t len = utf8_len(str);
+    if (!(len == 1 &&
+          str_is_upcase(* str))) {
+      break;
+    }
+    prev = i;
+    i += len;
+    upwords++;
+  }
+  if (upwords <= 1) {
+    while (i < len) {
+      utf_t * str = &string[i];
+      size_t len = utf8_len(str);
+      if (len == 1 &&
+          str_is_upcase(* str)) {
+        break;
+      }
+      i += len;
+    }
+  } else {
+    i = prev;
+  }
+  return i;
+}
+
+size_t
+tok_words(tok_t * tok) {
+  size_t words = 0;
+  size_t i = 0;
+  while (i < tok->len) {
+    utf_t * str = &tok->string[i];
+    size_t len = utf8_len(str);
+    size_t wlen = tok_word(str, tok->len - i);
+    if (wlen) {
+      words++;
+      i += wlen;
+    } else {
+      i += len;
+    }
+  }
+  if (words == 0) words = 1;
+  return words;
+}
+
+typedef int str_is_case_t(utf_t c);
+typedef utf_t str_case_t(utf_t c);
+
+utf_t
+str_upcase(utf_t c) {
+  return c - 0x20;
+}
+
+utf_t
+str_dwcase(utf_t c) {
+  return c + 0x20;
+}
+
+void
+tok_case(utf_t * dest, utf_t * src, size_t len,
+         str_is_case_t * cmp, str_case_t * yield) {
+  size_t i = 0;
+  while (i < len) {
+    utf_t * str = &src[i];
+    size_t len = utf8_len(str);
+    strncpy(&dest[i], str, len);
+    if (len == 1 &&
+        cmp(* str)) {
+      dest[i] = yield(* str);
+    }
+    i += len;
+  }
+}
+
+void
+tok_upcase(utf_t * dest, utf_t * src, size_t len) {
+  tok_case(dest, src, len, str_is_dwcase, str_upcase);
+}
+
+void
+tok_dwcase(utf_t * dest, utf_t * src, size_t len) {
+  tok_case(dest, src, len, str_is_upcase, str_dwcase);
+}
+
+typedef void tok_case_t(utf_t * dest, utf_t * src, size_t len);
+
+void
+tok_inflect(utf_t * dest, tok_t * src, tok_case_t * yield) {
+  size_t i = 0;
+  while (i < src->len) {
+    utf_t * str = &src->string[i];
+    size_t len = utf8_len(str);
+    size_t wlen = tok_word(str, src->len - i);
+    printf("%c wlen %zu\n", * str, wlen);
+    if (wlen) {
+      yield(dest, str, wlen);
+      i += wlen;
+      dest += wlen;
+      * dest++ = '_';
+    } else {
+      strncpy(dest, str, len);
+      i += len;
+      dest += len;
+    }
+  }
+}
+
+// FooBar => FOO_BAR
+void
+tok_constantize(utf_t * dest, tok_t * src) {
+  tok_inflect(dest, src, tok_upcase);
+}
+
+// FooBar => foo_bar
+void
+tok_underscore(utf_t * dest, tok_t * src) {
+  tok_inflect(dest, src, tok_dwcase);
+}
+
+typedef void tok_inflect_t(utf_t * dest, tok_t * src);
+
+utf_t *
+class_prefix(tok_t * src, utf_t * prefix, utf_t * suffix,
+             tok_inflect_t * yield) {
+  size_t plen = strlen(prefix);
+  size_t slen = strlen(suffix);
+  size_t len = (plen + src->len + tok_words(src) - 1 +
+                slen + 1);
+  utf_t * dest = malloc(len);
+  printf("words %zu\n", tok_words(src));
+  printf("len %zu\n", len);
+  strncpy(dest, prefix, plen);
+  yield(dest + plen, src);
+  strncpy(dest + len - slen - 1, suffix, slen);
+  dest[len - 1] = '\0';
+  return dest;
+}
+
+// FooBar  > O_FOO_BAR_H
+// FooBar  > o_class_foo_bar_t
+// FooBar  > o_foo_bar_t
+// FooBar => o_class_foo_bar
+// FooBar => o_foo_bar
+// FooBar  > o_class_foo_bar_
+// FooBar => o_class_foo_bar_methods
+// FooBar => o_foo_bar_instance_variables
+// FooBar => o_init_foo_bar_class
+void
+class_types(class_t * class) {
+  tok_t * klass = &class->class;
+  tok_t * super = &class->super;
+  class->header = class_prefix(klass, "O_", "_H", tok_constantize);
+  class->class_type = class_prefix(klass, "o_class_", "_t", tok_underscore);
+  class->super_type = class_prefix(super, "o_class_", "_t", tok_underscore);
+  class->instance_type = class_prefix(klass, "o_", "_t", tok_underscore);
+  class->class_name = class_prefix(klass, "o_class_", "", tok_underscore);
+  class->instance_name = class_prefix(klass, "o_", "", tok_underscore);
+  class->class_prefix = class_prefix(klass, "o_class_", "_", tok_underscore);
+  class->super_prefix = class_prefix(super, "o_class_", "_", tok_underscore);
+  class->methods_name = class_prefix(klass, "o_class_", "_methods",
+                                     tok_underscore);
+  class->instances_name = class_prefix(klass, "o_", "_instance_variables",
+                                       tok_underscore);
+  class->super_methods_name = class_prefix(super, "o_class_", "_methods",
+                                           tok_underscore);
+  class->super_instances_name = class_prefix(super, "o_", "_instance_variables",
+                                             tok_underscore);
+  class->init_name = class_prefix(klass, "o_init_", "_class", tok_underscore);
 }
 
 void
@@ -825,20 +1074,36 @@ build_header(utf_t * string, size_t size) {
   printf("class: [%s]\n", tok_str(&class.class));
   printf("super: [%s]\n", tok_str(&class.super));
   printf("struct: [%s]\n", tok_str(&class.strukt));
-  printf("method[%zu]:\n", class.mlen);
+  printf("method[%zu]:\n", class.meths.len);
   size_t i = 0;
-  for (; i < class.mlen; i++) {
-    meth_t * meth = &class.meths[i];
-    if (meth->override.name.string == NULL) {
-      printf("[%s]", tok_str(&meth->normal.name));
+  for (; i < class.meths.len; i++) {
+    meth_t * meth = &((meth_t *) class.meths.objs)[i];
+    if (meth->or.name.string == NULL) {
+      toks_print(&meth->nm.name);
     } else {
-      printf("[%s]", tok_str(&meth->override.ret));
-      printf("[%s]", tok_str(&meth->override.name));
-      printf("[%s]", tok_str(&meth->override.arg));
+      toks_print(&meth->or.ret);
+      printf("[%s]", tok_str(&meth->or.name));
+      toks_print(&meth->or.arg);
     }
   }
   puts("");
-  free(class.meths);
+  class_types(&class);
+  printf("class header: %s\n", class.header);
+  printf("class class_type: %s\n", class.class_type);
+  printf("class.super_type: %s\n", class.super_type);
+  printf("class.instance_type: %s\n", class.instance_type);
+  printf("class.class_name: %s\n", class.class_name);
+  printf("class.instance_name: %s\n", class.instance_name);
+  printf("class.class_prefix: %s\n", class.class_prefix);
+  printf("class.super_prefix: %s\n", class.super_prefix);
+  printf("class.methods_name: %s\n", class.methods_name);
+  printf("class.instances_name: %s\n", class.instances_name);
+  printf("class.super_methods_name: %s\n", class.super_methods_name);
+  printf("class.super_instances_name: %s\n", class.super_instances_name);
+  printf("class.init_name: %s\n", class.init_name);
+  free(class.header);
+  free(class.class_type);
+  meth_del(&class);
 }
 
 typedef enum {
