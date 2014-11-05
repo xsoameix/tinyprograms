@@ -214,7 +214,7 @@ utf8_char_len(uint8_t * p) {
     size_t len = 0;
     int state = 0;
     while(true) {
-        printf("state %d, char %X\n", state, * p);
+        printf("state %d, char %02X\n", state, * p);
         state = trans[state][* p];
         p += 1;
         len += 1;
