@@ -743,6 +743,7 @@ typedef struct {
   utf_t * instance_type;
   utf_t * class_name;
   utf_t * instance_name;
+  utf_t * super_instance_name;
   utf_t * class_prefix;
   utf_t * super_prefix;
   utf_t * methods_name;
@@ -801,12 +802,17 @@ tok_str(tok_t * tok) {
 
 void
 toks_print(ary_t * toks) {
-  printf("[");
   size_t i = 0;
   for (; i < toks->len; i++) {
     printf("%s", tok_str(&tok_get(toks, i)));
   }
-  printf("]");
+}
+
+void
+toks_print_i(ary_t * toks, size_t i) {
+  for (; i < toks->len; i++) {
+    printf("%s", tok_str(&tok_get(toks, i)));
+  }
 }
 
 void
@@ -878,7 +884,6 @@ parse_header(utf_t * string, size_t size) {
   scan.scan_tok = scan_token;
   parse_match(&scan, TERM);
   parse_match(&scan, RBLOCK);
-  puts("");
   return class;
 }
 
@@ -991,7 +996,6 @@ tok_inflect(utf_t * dest, tok_t * src, tok_case_t * yield) {
     utf_t * str = &src->string[i];
     size_t len = utf8_len(str);
     size_t wlen = tok_word(str, src->len - i);
-    printf("%c wlen %zu\n", * str, wlen);
     if (wlen) {
       yield(dest, str, wlen);
       i += wlen;
@@ -1027,8 +1031,6 @@ class_prefix(tok_t * src, utf_t * prefix, utf_t * suffix,
   size_t len = (plen + src->len + tok_words(src) - 1 +
                 slen + 1);
   utf_t * dest = malloc(len);
-  printf("words %zu\n", tok_words(src));
-  printf("len %zu\n", len);
   strncpy(dest, prefix, plen);
   yield(dest + plen, src);
   strncpy(dest + len - slen - 1, suffix, slen);
@@ -1055,6 +1057,7 @@ class_types(class_t * class) {
   class->instance_type = class_prefix(klass, "o_", "_t", tok_underscore);
   class->class_name = class_prefix(klass, "o_class_", "", tok_underscore);
   class->instance_name = class_prefix(klass, "o_", "", tok_underscore);
+  class->super_instance_name = class_prefix(super, "o_", "", tok_underscore);
   class->class_prefix = class_prefix(klass, "o_class_", "_", tok_underscore);
   class->super_prefix = class_prefix(super, "o_class_", "_", tok_underscore);
   class->methods_name = class_prefix(klass, "o_class_", "_methods",
@@ -1071,36 +1074,76 @@ class_types(class_t * class) {
 void
 build_header(utf_t * string, size_t size) {
   class_t class = parse_header(string, size);
-  printf("class: [%s]\n", tok_str(&class.class));
-  printf("super: [%s]\n", tok_str(&class.super));
-  printf("struct: [%s]\n", tok_str(&class.strukt));
-  printf("method[%zu]:\n", class.meths.len);
   size_t i = 0;
+  class_types(&class);
+  printf("#ifndef %s\n", class.header);
+  printf("#define %s\n", class.header);
+  puts("");
+  printf("#include \"%s.h\"\n", class.super_instance_name);
+  puts("");
+  printf("#define o_super_class_type %s\n", class.super_type);
+  printf("#define o_class_type %s\n", class.class_type);
+  printf("#define o_instance_type %s\n", class.instance_type);
+  puts("");
+  printf("typedef struct %s o_class_type;\n", class.class_name);
+  printf("typedef struct %s o_instance_type;\n", class.instance_name);
+  puts("");
+  i = 0;
   for (; i < class.meths.len; i++) {
-    meth_t * meth = &((meth_t *) class.meths.objs)[i];
+    meth_t * meth = &meth_get(&class, i);
+    if (meth->or.name.string != NULL) {
+      printf("#define %s%s(...) \\\n",
+             class.class_prefix, tok_str(&meth->or.name) + 1);
+      printf("  %s%s(__VA_ARGS__)\n",
+             class.super_prefix, tok_str(&meth->or.name) + 1);
+    }
+  }
+  printf("#define %s() \\\n", class.methods_name);
+  printf("  %s(); \\\n", class.super_methods_name);
+  i = 0;
+  for (; i < class.meths.len; i++) {
+    meth_t * meth = &meth_get(&class, i);
     if (meth->or.name.string == NULL) {
-      toks_print(&meth->nm.name);
-    } else {
-      toks_print(&meth->or.ret);
-      printf("[%s]", tok_str(&meth->or.name));
-      toks_print(&meth->or.arg);
+      printf("  ");
+      toks_print_i(&meth->nm.name, 1);
+      if (i == class.meths.len - 1) {
+        puts("");
+      } else {
+        printf("; \\\n");
+      }
     }
   }
   puts("");
-  class_types(&class);
-  printf("class header: %s\n", class.header);
-  printf("class class_type: %s\n", class.class_type);
-  printf("class.super_type: %s\n", class.super_type);
-  printf("class.instance_type: %s\n", class.instance_type);
-  printf("class.class_name: %s\n", class.class_name);
-  printf("class.instance_name: %s\n", class.instance_name);
-  printf("class.class_prefix: %s\n", class.class_prefix);
-  printf("class.super_prefix: %s\n", class.super_prefix);
-  printf("class.methods_name: %s\n", class.methods_name);
-  printf("class.instances_name: %s\n", class.instances_name);
-  printf("class.super_methods_name: %s\n", class.super_methods_name);
-  printf("class.super_instances_name: %s\n", class.super_instances_name);
-  printf("class.init_name: %s\n", class.init_name);
+  printf("struct %s {\n", class.class_name);
+  printf("  %s();\n", class.super_instances_name);
+  i = 0;
+  for (; i < class.meths.len; i++) {
+    meth_t * meth = &meth_get(&class, i);
+    if (meth->or.name.string != NULL) {
+      printf("  %s%s", class.class_prefix, tok_str(&meth->or.name) + 1);
+      toks_print_i(&meth->or.arg, 1);
+      printf(";\n");
+    }
+  }
+  printf("  %s();\n", class.methods_name);
+  printf("};\n");
+  puts("");
+  printf("extern o_class_type %s;\n", tok_str(&class.class));
+  puts("");
+  printf("#define %s() \\\n", class.instances_name);
+  printf("  %s(); \\\n", class.instances_name);
+  printf("%s\n", tok_str(&class.strukt) + 1);
+  printf("struct %s {\n", class.instance_name);
+  printf("  %s();\n", class.instances_name);
+  printf("};\n");
+  puts("");
+  printf("void %s(void);\n", class.init_name);
+  puts("");
+  printf("#undef o_super_class_type\n");
+  printf("#undef o_class_type\n");
+  printf("#undef o_instance_type\n");
+  puts("");
+  printf("#endif\n");
   free(class.header);
   free(class.class_type);
   meth_del(&class);
