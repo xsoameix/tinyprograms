@@ -5,9 +5,9 @@ class String < Object {
   }
 
   methods {
-    @ *    (* -new)   (char *);
-    void   (* -init)  (self, char *);
-    char * (* -string)(self);
-    size_t (* -len)   (self);
+    · *    (* ·new)   (char *);
+    void   (* ·init)  (self, char *);
+    char * (* ·string)(self);
+    size_t (* ·len)   (self);
   }
 }

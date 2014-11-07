@@ -275,7 +275,7 @@ file_read(int files_len, utf_t * filename, fread_t * yield) {
   }
   fclose(file);
   void * ret = yield(buf, size);
-  free(buf);
+  if (ret == 0) free(buf);
   return ret;
 }
 
@@ -650,6 +650,8 @@ scan_ctoken(scan_t * scan) {
         state = STAT1;
       } else if (c == '@') {
         state = TSELF1;
+      } else if (scan_is(code, dterm1)) {
+        state = TERM1;
       } else {
         state = OTHERS1;
       }
@@ -685,6 +687,13 @@ scan_ctoken(scan_t * scan) {
         state = METHOD1;
       } else {
         def = METHOD;
+        break;
+      }
+    } else if (state == TERM1) {
+      if (scan_is(code, dterm1)) {
+        state = TERM1;
+      } else {
+        def = TERM;
         break;
       }
     } else if (state == OTHERS1) {
@@ -766,8 +775,9 @@ typedef union {
 typedef struct {
   tok_t class;
   tok_t super;
-  tok_t strukt;
+  ary_t strukt;
   ary_t meths;
+  utf_t * string;
   utf_t * header;
   utf_t * super_header;
   utf_t * super_type;
@@ -804,6 +814,11 @@ ary_add(ary_t * ary, void * obj, size_t size) {
   memcpy(ary->objs + size * ary->len++, obj, size);
 }
 
+void
+ary_free(ary_t * ary) {
+  free(ary->objs);
+}
+
 #define meth_new(class, capa) \
   ary_new(&(class)->meths, capa, sizeof(meth_t))
 
@@ -817,7 +832,7 @@ ary_add(ary_t * ary, void * obj, size_t size) {
   &((tok_t *) (toks)->objs)[i]
 
 #define class_get(classes, i) \
-  &((class_t *) (classes)->objs)[i]
+  ((class_t **) (classes)->objs)[i]
 
 #define tok_new(toks) \
   ary_new(toks, 1, sizeof(tok_t))
@@ -826,10 +841,10 @@ ary_add(ary_t * ary, void * obj, size_t size) {
   ary_add(toks, tok, sizeof(tok_t))
 
 #define class_new(classes) \
-  ary_new(classes, 2, sizeof(class_t))
+  ary_new(classes, 2, sizeof(class_t *))
 
 #define class_add(classes, class) \
-  ary_add(classes, class, sizeof(class_t))
+  ary_add(classes, class, sizeof(class_t *))
 
 utf_t *
 tok_str(tok_t * tok) {
@@ -841,9 +856,18 @@ tok_str(tok_t * tok) {
   return buf;
 }
 
-void
-toks_print(class_t * class, ary_t * toks) {
+int
+tok_first_not_term(ary_t * toks) {
   size_t i = 0;
+  for (; i < toks->len; i++) {
+    tok_t * tok = tok_get(toks, i);
+    if (tok->def != TERM) break;
+  }
+  return i;
+}
+
+void
+toks_print(class_t * class, ary_t * toks, size_t i) {
   for (; i < toks->len; i++) {
     tok_t * tok = tok_get(toks, i);
     def_t def = tok->def;
@@ -860,39 +884,29 @@ toks_print(class_t * class, ary_t * toks) {
 }
 
 void
-toks_print_i(ary_t * toks, size_t i) {
-  for (; i < toks->len; i++) {
-    tok_t * tok = tok_get(toks, i);
-    if (tok->def == SELF) {
-      printf("o_instance_type * ");
-    }
-    printf("%s", tok_str(tok));
-  }
-}
-
-void
-meth_del(class_t * class) {
+meth_free(class_t * class) {
   size_t len = class->meths.len;
   size_t i = 0;
   for (; i < len; i++) {
     meth_t * meth = meth_get(class, i);
     if (meth->or.name.string == NULL) {
-      free(meth->nm.name.objs);
+      ary_free(&meth->nm.name);
     } else {
-      free(meth->or.ret.objs);
-      free(meth->or.arg.objs);
+      ary_free(&meth->or.ret);
+      ary_free(&meth->or.arg);
     }
   }
-  free(class->meths.objs);
+  ary_free(&class->meths);
 }
 
 #define STRLEN(str) lenof(str) - 1
 
 void *
 parse_header(utf_t * string, size_t size) {
+  class_t * class = calloc(1, sizeof(class_t));
+  class->string = string;
   scan_t scan = scan_new(string, size);
   parse_term(&scan, CLASS);
-  class_t * class = calloc(1, sizeof(class_t));
   class->class = parse_term(&scan, ID);
   tok_t tok = parse_next(&scan);
   if (parse_test(&tok, EXTENDS)) {
@@ -915,8 +929,8 @@ parse_header(utf_t * string, size_t size) {
   size_t level = 1;
   scan.scan_tok = scan_ctoken;
   tok = parse_next(&scan);
-  class->strukt = tok;
-  class->strukt.len = 0;
+  tok_new(&class->strukt);
+  tok_add(&class->strukt, &tok);
   while (1) {
     if (parse_test(&tok, LBLOCK)) {
       level++;
@@ -924,7 +938,7 @@ parse_header(utf_t * string, size_t size) {
       level--;
     }
     if (level == 0) break;
-    class->strukt.len += tok.len;
+    tok_add(&class->strukt, &tok);
     tok = parse_next(&scan);
   }
   scan.scan_tok = scan_token;
@@ -957,7 +971,7 @@ parse_header(utf_t * string, size_t size) {
       }
     }
   }
-  free(meth.nm.name.objs);
+  ary_free(&meth.nm.name);
   scan.scan_tok = scan_token;
   parse_match(&scan, TERM);
   parse_match(&scan, RBLOCK);
@@ -1298,7 +1312,7 @@ h_add(h_table * table, h_data_t key, h_size_t klen,
 
 int
 h_eq(h_data_t a, h_size_t alen, h_data_t b, h_size_t blen) {
-  return a == b || alen == blen && strncmp(a, b, alen);
+  return a == b || alen == blen && memcmp(a, b, alen);
 }
 
 int
@@ -1409,31 +1423,81 @@ h_free(h_table * table) {
 }
 
 void *
-build_header(utf_t * string, size_t size) {
+class_header(utf_t * string, size_t size) {
   class_t * class = parse_header(string, size);
-  size_t i = 0;
   class_types(class);
-  ary_t parents = {0};
-  class_new(&parents);
-  class_add(&parents, class);
-  class_t * klass = class;
-  while (klass->super.string != NULL) {
-    klass = file_read(1, class->super_header, parse_header);
-    class_add(&parents, klass);
+  return class;
+}
+
+ary_t
+class_ancestors(class_t * class) {
+  ary_t ancs = {0};
+  class_new(&ancs);
+  class_add(&ancs, &class);
+  while (class->super.string != NULL) {
+    class = file_read(1, class->super_header, class_header);
+    class_add(&ancs, &class);
   }
+  return ancs;
+}
+
+h_table *
+class_meths(ary_t * ancs) {
   h_table * meths = h_init();
-  i = 0;
-  for (; i < parents.len; i++) {
-    size_t reverse = parents.len - i - 1;
-    class_t * klass = class_get(&parents, reverse);
+  size_t i = 0;
+  for (; i < ancs->len; i++) {
+    size_t reverse = ancs->len - i - 1;
+    class_t * class = class_get(ancs, reverse);
     size_t mi = 0;
-    for (; mi < klass->meths.len; mi++) {
-      meth_t * meth = meth_get(klass, mi);
+    for (; mi < class->meths.len; mi++) {
+      meth_t * meth = meth_get(class, mi);
       tok_t * name = &meth->or.name;
       h_insert(meths, name->string + 1, (h_size_t) (name->len - 1),
                (h_data_t) meth);
     }
   }
+  return meths;
+}
+
+void
+class_free_types(class_t * class) {
+  free(class->header);
+  free(class->super_header);
+  free(class->class_type);
+  free(class->super_type);
+  free(class->instance_type);
+  free(class->class_name);
+  free(class->instance_name);
+  free(class->super_instance_name);
+  free(class->class_prefix);
+  free(class->super_prefix);
+  free(class->methods_name);
+  free(class->instances_name);
+  free(class->super_methods_name);
+  free(class->super_instances_name);
+  free(class->init_name);
+}
+
+void
+class_free_ancestors(ary_t * ancs) {
+  size_t i = 0;
+  for (; i < ancs->len; i++) {
+    class_t * class = class_get(ancs, i);
+    free(class->string);
+    ary_free(&class->strukt);
+    meth_free(class);
+    class_free_types(class);
+    free(class);
+  }
+  ary_free(ancs);
+}
+
+void *
+build_header(utf_t * string, size_t size) {
+  class_t * class = class_header(string, size);
+  size_t i = 0;
+  ary_t ancs = class_ancestors(class);
+  h_table * meths = class_meths(&ancs);
   printf("#ifndef %s\n", class->header);
   printf("#define %s\n", class->header);
   puts("");
@@ -1442,38 +1506,40 @@ build_header(utf_t * string, size_t size) {
   printf("typedef struct %s %s;\n", class->class_name, class->class_type);
   printf("typedef struct %s %s;\n", class->instance_name, class->instance_type);
   puts("");
-  printf("struct %s {", class->class_name);
+  printf("struct %s {\n", class->class_name);
   h_entry * entry = meths->head;
   while (entry) {
     meth_t * meth = (meth_t *) entry->val;
     tok_t * name = &meth->or.name;
     if (name->string != NULL) {
       printf("  ");
-      toks_print(class, &meth->or.ret);
+      size_t i = tok_first_not_term(&meth->or.ret);
+      toks_print(class, &meth->or.ret, i);
       printf("%s", tok_str(&meth->or.name) + 1);
-      toks_print(class, &meth->or.arg);
-      printf(";");
+      toks_print(class, &meth->or.arg, 0);
+      printf(";\n");
     }
     entry = entry->back;
   }
   h_free(meths);
-  printf("\n};\n");
+  printf("};\n");
   puts("");
   printf("extern %s %s;\n", class->class_type, tok_str(&class->class));
   puts("");
-  printf("#define %s() \\\n", class->instances_name);
-  printf("  %s(); \\\n", class->super_instances_name);
-  printf("%s\n", tok_str(&class->strukt) + 1);
-  printf("struct %s {\n", class->instance_name);
-  printf("  %s()\n", class->instances_name);
+  printf("  struct %s {", class->instance_name);
+  i = 0;
+  for (; i < ancs.len; i++) {
+    size_t reverse = ancs.len - i - 1;
+    class_t * klass = class_get(&ancs, reverse);
+    toks_print(class, &klass->strukt, 1);
+  }
   printf("};\n");
   puts("");
   printf("void %s(void);\n", class->init_name);
   puts("");
   printf("#endif\n");
-  free(class->header);
-  free(class->class_type);
-  meth_del(class);
+  class_free_ancestors(&ancs);
+  return (void *) 1;
 }
 
 typedef enum {
