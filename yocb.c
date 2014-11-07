@@ -222,16 +222,15 @@ utf8_len(utf_t * c) {
 
 typedef uint32_t ucode_t;
 
-#define BIT_MASK(n) (1 << (n) - 1)
+#define BIT_MASK(n) ((1 << (n)) - 1)
 
 static ucode_t
 utf8_code(utf_t * c) {
   ucode_t code = * c;
   size_t len = utf8_len(c);
   if (len > 1) {
-    c++;
     len--;
-    code = * c & BIT_MASK(6 - len);
+    code &= BIT_MASK(6 - len);
     while (len--) {
       c++;
       code <<= 6;
@@ -644,11 +643,9 @@ scan_ctoken(scan_t * scan) {
         state = LBLOCK1;
       } else if (c == '}') {
         state = RBLOCK1;
-      } else if (c == '-') {
-        state = METHOD1;
       } else if (c == ';') {
         state = STAT1;
-      } else if (c == '@') {
+      } else if (code == 0xB7) { // middle dot
         state = TSELF1;
       } else if (scan_is(code, dterm1)) {
         state = TERM1;
@@ -673,8 +670,10 @@ scan_ctoken(scan_t * scan) {
       def = STAT;
       break;
     } else if (state == TSELF1) {
-      if (c == '@') {
+      if (code == 0xB7) {
         state = TCLASS1;
+      } else if (scan_is(code, did2)) {
+        state = METHOD1;
       } else {
         def = TSELF;
         break;
@@ -1515,7 +1514,8 @@ build_header(utf_t * string, size_t size) {
       printf("  ");
       size_t i = tok_first_not_term(&meth->or.ret);
       toks_print(class, &meth->or.ret, i);
-      printf("%s", tok_str(&meth->or.name) + 1);
+      utf_t * string = tok_str(name);
+      printf("%s", string + utf8_len(string));
       toks_print(class, &meth->or.arg, 0);
       printf(";\n");
     }

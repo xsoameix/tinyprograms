@@ -1,6 +1,6 @@
-class String < Object
+·class String < Object
 
-@ *
+· *
 ·new(char *) {
 }
 
@@ -36,3 +36,5 @@ size_t
 ·len(self) {
   return strlen(·string);
 }
+
+·end
