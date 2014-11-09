@@ -1,40 +1,75 @@
-·class String < Object
+#include <stdio.h>
+
+:require "str\".c"
+:require "obj.c"
+
+:class String < Object {
+
+  struct {
+    char * string;
+  }
+
+  methods {
+    · *    (* -new)   (char *);
+    void   (* -init)  (self, char *);
+    char * (* -string)(self);
+    size_t (* -len)   (self);
+    size_t (* -s2i)   (self);
+  }
+}
 
 · *
-·new(char *) {
+:new(char *) {
 }
 
 void
-·init(self, char * val) {
-  ··initialize();
-  ·string = val;
+:init(self, char * val) {
+  super.foo();
+  super("abc");
+  super();
+  super;
+  super·initialize("abc");
+  super·initialize();
+  super·initialize;
+  ·initialize("abc");
+  ·initialize();
+  ·initialize;
+  @string = val;
+
   string_t * str = String.new("abc");
-  str·len + 1;
-  str·concat("def") + 1;
-  str->_->len(str) + 1;
-  str->_->concat(str, "def") + 1;
+  str·concat("def");
+  str·concat();
+  str·concat;
 
   string_t str = String.new("abc");
-  str˙len + 1;
-  str˙concat("def") + 1;
-  str˙+("def")˙+("def");
-  str˙add("def")˙add("def");
-  str˙at(1);
-
-  str._->len(&str) + 1;
-  str._->concat(&str, "def") + 1;
-  str._->add(&str, "def")._->add(&str, "def");
-  str._->at(&str, 1)
+  strˎconcat("def");
+  strˎconcat();
+  strˎconcat;
+  strˎ2;
 }
 
 char *
-·string(self) {
-  return ·string;
+:string(self) {
+  return @string;
 }
 
 size_t
-·len(self) {
-  return strlen(·string);
+:len(self) {
+  return strlen(@string);
 }
 
-·end
+:class Array < Object {
+
+  struct {
+    size_t len;
+  }
+
+  methods {
+    size_t (* -len)(self);
+  }
+}
+
+size_t
+:len(self) {
+  return @len;
+}
