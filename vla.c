@@ -4,6 +4,7 @@
 void
 clone_str(char * str) {
   char clone[strlen(str)];
+  int i = 9;
   strncpy(clone, str, strlen(str));
   printf("%s\n", clone);
 }

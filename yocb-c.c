@@ -1,9 +1,8 @@
 #include <stdio.h>
 
-:require "str\".c"
-:require "obj.c"
+:require "object-c.c"
 
-:class String < Object {
+:class String {
 
   struct {
     char * string;
@@ -27,7 +26,6 @@ void
   super.foo();
   super("abc");
   super();
-  super;
   super·initialize("abc");
   super·initialize();
   super·initialize;
@@ -45,7 +43,6 @@ void
   strˎconcat("def");
   strˎconcat();
   strˎconcat;
-  strˎ2;
 }
 
 char *

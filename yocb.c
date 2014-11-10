@@ -229,6 +229,15 @@ h_contains(h_table * table, h_data_t key, h_size_t klen) {
   return h_lookup(table, key, klen, 0, h_get_cb);
 }
 
+void
+h_merge(h_table * z, h_table * x) {
+  h_entry * head = x->head;
+  while (head) {
+    h_insert(z, head->key, head->klen, head->val);
+    head = head->back;
+  }
+}
+
 h_table *
 h_init_with_capa(h_size_t capa) {
   capa = h_new_capa(capa);
@@ -503,39 +512,40 @@ utf8_code(utf_t * c) {
 }
 
 FILE *
-file_open(int files_len, utf_t * filename) {
+file_open(int files_len, utf_t * fname) {
   if (files_len != 1) {
     puts("should input 1 file");
     exit(0);
   }
-  FILE * file = fopen(filename, "r");
+  FILE * file = fopen(fname, "r");
   if (file == NULL) {
-    printf("no %s file\n", filename);
+    printf("no %s file\n", fname);
     exit(0);
   }
   return file;
 }
 
-typedef void * fread_t(utf_t * file, size_t size);
+typedef void *
+fread_t(utf_t * fname, utf_t * file, size_t size, void * arg);
 
 void *
-file_read(int files_len, utf_t * filename, fread_t * yield) {
-  FILE * file = file_open(files_len, filename);
+file_read(int files_len, utf_t * fname, fread_t * yield, void * arg) {
+  FILE * file = file_open(files_len, fname);
   fseek(file, 0, SEEK_END);
   size_t size = ftell(file);
   rewind(file);
   utf_t * buf = malloc(size);
   if (buf == NULL) {
-    printf("alloc memory error for file %s\n", filename);
+    printf("alloc memory error for file %s\n", fname);
     exit(0);
   }
   size_t read_size = fread(buf, 1, size, file);
   if (read_size != size) {
-    printf("reading error for file %s\n", filename);
+    printf("reading error for file %s\n", fname);
     exit(0);
   }
   fclose(file);
-  void * ret = yield(buf, size);
+  void * ret = yield(fname, buf, size, arg);
   if (ret == 0) free(buf);
   return ret;
 }
@@ -582,7 +592,7 @@ typedef enum {
   LBLOCK,    //27  {
   RBLOCK,    //28  }
   STRUCT,    //29  struct
-  METHODS,   //20  methods
+  METHODS,   //30  methods
   TERM,      //31  [\r\n\s]+
 
   SELF,      //32  self
@@ -784,19 +794,19 @@ static dfa_t did_tail[] = {
     UPERIOD('A', 'Z') \
   }
 
-static dfa_t dclass1[] = UNOT('l');
-static dfa_t dclass2[] = UNOT('a');
-static dfa_t dclass3[] = UNOT('s');
-static dfa_t dmethods1[] = UNOT('e');
-static dfa_t dmethods2[] = UNOT('t');
-static dfa_t dmethods3[] = UNOT('h');
-static dfa_t dmethods4[] = UNOT('o');
-static dfa_t dmethods5[] = UNOT('d');
-static dfa_t dstruct2[] = UNOT('r');
-static dfa_t dstruct3[] = UNOT('u');
-static dfa_t dstruct4[] = UNOT('c');
+static dfa_t dnot_l[] = UNOT('l');
+static dfa_t dnot_a[] = UNOT('a');
+static dfa_t dnot_s[] = UNOT('s');
+static dfa_t dnot_e[] = UNOT('e');
+static dfa_t dnot_t[] = UNOT('t');
+static dfa_t dnot_h[] = UNOT('h');
+static dfa_t dnot_o[] = UNOT('o');
+static dfa_t dnot_d[] = UNOT('d');
+static dfa_t dnot_r[] = UNOT('r');
+static dfa_t dnot_u[] = UNOT('u');
+static dfa_t dnot_c[] = UNOT('c');
 
-static dfa_t dcend1[] = UNOT('n');
+static dfa_t dnot_n[] = UNOT('n');
 static dfa_t dcself1[] = {
   UCMP('d'),
 
@@ -813,10 +823,10 @@ static dfa_t dcself1[] = {
   UPERIOD('_', '_'),
   UPERIOD('a', 'd')  // no s[e]lf
 };
-static dfa_t dcself3[] = UNOT('f');
-static dfa_t dcsuper1[] = UNOT('p');
-static dfa_t dnotq[] = UNOT('q');
-static dfa_t dnoti[] = UNOT('i');
+static dfa_t dnot_f[] = UNOT('f');
+static dfa_t dnot_p[] = UNOT('p');
+static dfa_t dnot_q[] = UNOT('q');
+static dfa_t dnot_i[] = UNOT('i');
 
 static dfa_t dterm1[] = {
   UCMP(0x0D),
@@ -926,24 +936,24 @@ static next_t cstate_cmethod2 = {
   FINISHED_STATE(CMETHOD)
 };
 static next_t cstate_crequire[] = {
-  NEXT_CKEYWORD('e', CREQUIRE2, dmethods1),
-  NEXT_CKEYWORD('q', CREQUIRE3, dnotq),
-  NEXT_CKEYWORD('u', CREQUIRE4, dstruct3),
-  NEXT_CKEYWORD('i', CREQUIRE5, dnoti),
-  NEXT_CKEYWORD('r', CREQUIRE6, dstruct2),
-  NEXT_CKEYWORD('e', CREQUIRE7, dmethods1),
+  NEXT_CKEYWORD('e', CREQUIRE2, dnot_e),
+  NEXT_CKEYWORD('q', CREQUIRE3, dnot_q),
+  NEXT_CKEYWORD('u', CREQUIRE4, dnot_u),
+  NEXT_CKEYWORD('i', CREQUIRE5, dnot_i),
+  NEXT_CKEYWORD('r', CREQUIRE6, dnot_r),
+  NEXT_CKEYWORD('e', CREQUIRE7, dnot_e),
   NEXT_CCHAR_END(CREQUIRE)
 };
 static next_t cstate_cclass[] = {
-  NEXT_CKEYWORD('l', CCLASS2, dclass1),
-  NEXT_CKEYWORD('a', CCLASS3, dclass2),
-  NEXT_CKEYWORD('s', CCLASS4, dclass3),
-  NEXT_CKEYWORD('s', CCLASS5, dclass3),
+  NEXT_CKEYWORD('l', CCLASS2, dnot_l),
+  NEXT_CKEYWORD('a', CCLASS3, dnot_a),
+  NEXT_CKEYWORD('s', CCLASS4, dnot_s),
+  NEXT_CKEYWORD('s', CCLASS5, dnot_s),
   NEXT_CCHAR_END(CCLASS)
 };
 static next_t cstate_cend[] = {
-  NEXT_CKEYWORD('n', CEND1, dcend1),
-  NEXT_CKEYWORD('d', CEND2, dmethods5),
+  NEXT_CKEYWORD('n', CEND1, dnot_n),
+  NEXT_CKEYWORD('d', CEND2, dnot_d),
   NEXT_CCHAR_END(CEND)
 };
 static next_t cstate_cinstance1 = {
@@ -963,14 +973,14 @@ static next_t cstate_cself1 = {
   FINISHED_STATE(OTHERS)
 };
 static next_t cstate_cself2[] = {
-  NEXT_CKEYWORD('l', CSELF3, dclass1),
-  NEXT_CKEYWORD('f', CSELF4, dcself3),
+  NEXT_CKEYWORD('l', CSELF3, dnot_l),
+  NEXT_CKEYWORD('f', CSELF4, dnot_f),
   NEXT_CCHAR_END(CSELF)
 };
 static next_t cstate_csuper[] = {
-  NEXT_CKEYWORD('p', CSUPER2, dcsuper1),
-  NEXT_CKEYWORD('e', CSUPER3, dmethods1),
-  NEXT_CKEYWORD('r', CSUPER4, dstruct2),
+  NEXT_CKEYWORD('p', CSUPER2, dnot_p),
+  NEXT_CKEYWORD('e', CSUPER3, dnot_e),
+  NEXT_CKEYWORD('r', CSUPER4, dnot_r),
   NEXT_CCHAR_END(CSUPER)
 };
 static next_t cstate_cid = {
@@ -1040,7 +1050,7 @@ cscan_states(void) {
 
 void
 scan_debug(utf_t * string, size_t len) {
-  //return;
+  return;
   utf_t buf[64];
   size_t buflen = len;
   if (buflen >= lenof(buf)) buflen = lenof(buf) - 1;
@@ -1063,27 +1073,27 @@ static next_t state_start = {
   FINISHED_STATE(OTHERS)
 };
 static next_t state_class[] = {
-  NEXT_NKEYWORD('l', CLASS2, dclass1),
-  NEXT_NKEYWORD('a', CLASS3, dclass2),
-  NEXT_NKEYWORD('s', CLASS4, dclass3),
-  NEXT_NKEYWORD('s', CLASS5, dclass3),
+  NEXT_NKEYWORD('l', CLASS2, dnot_l),
+  NEXT_NKEYWORD('a', CLASS3, dnot_a),
+  NEXT_NKEYWORD('s', CLASS4, dnot_s),
+  NEXT_NKEYWORD('s', CLASS5, dnot_s),
   NEXT_NCHAR_END(CLASS)
 };
 static next_t state_struct[] = {
-  NEXT_NKEYWORD('t', STRUCT2, dmethods2),
-  NEXT_NKEYWORD('r', STRUCT3, dstruct2),
-  NEXT_NKEYWORD('u', STRUCT4, dstruct3),
-  NEXT_NKEYWORD('c', STRUCT5, dstruct4),
-  NEXT_NKEYWORD('t', STRUCT6, dmethods2),
+  NEXT_NKEYWORD('t', STRUCT2, dnot_t),
+  NEXT_NKEYWORD('r', STRUCT3, dnot_r),
+  NEXT_NKEYWORD('u', STRUCT4, dnot_u),
+  NEXT_NKEYWORD('c', STRUCT5, dnot_c),
+  NEXT_NKEYWORD('t', STRUCT6, dnot_t),
   NEXT_NCHAR_END(STRUCT)
 };
 static next_t state_methods[] = {
-  NEXT_NKEYWORD('e', METHODS2, dmethods1),
-  NEXT_NKEYWORD('t', METHODS3, dmethods2),
-  NEXT_NKEYWORD('h', METHODS4, dmethods3),
-  NEXT_NKEYWORD('o', METHODS5, dmethods4),
-  NEXT_NKEYWORD('d', METHODS6, dmethods5),
-  NEXT_NKEYWORD('s', METHODS7, dclass3),
+  NEXT_NKEYWORD('e', METHODS2, dnot_e),
+  NEXT_NKEYWORD('t', METHODS3, dnot_t),
+  NEXT_NKEYWORD('h', METHODS4, dnot_h),
+  NEXT_NKEYWORD('o', METHODS5, dnot_o),
+  NEXT_NKEYWORD('d', METHODS6, dnot_d),
+  NEXT_NKEYWORD('s', METHODS7, dnot_s),
   NEXT_NCHAR_END(METHODS)
 };
 static next_t state_extends = FINISHED_CHAR(EXTENDS);
@@ -1131,42 +1141,6 @@ scan_states(void) {
   states[OTHERS1] = state_others;
   done = 1;
   return states;
-}
-
-tok_t
-scan_token(scan_t * scan) {
-  def_t def = UNKNOWN;
-  state_t state = START;
-  uchar_t uchar = scan_char(scan);
-  next_t * states = scan->states();
-  size_t i = scan->i;
-  while (scan->i < scan->size) {
-    ucode_t code = uchar.code;
-    uint8_t match = 0;
-    next_t * next = &states[state];
-    scmp_t * to = next->to;
-    for (; to && to->code; to++) {
-      if (scan_is(code, to->code)) {
-        state = to->next;
-        match = 1;
-        break;
-      }
-    }
-    if (!match) {
-      if (next->def == UNKNOWN) {
-        state = next->last;
-      } else {
-        def = next->def;
-        break;
-      }
-    }
-    scan->i += uchar.len;
-    uchar = scan_char(scan);
-  }
-  size_t len = scan->i - i;
-  utf_t * string = &scan->string[i];
-  scan_debug(string, len);
-  return (tok_t) {def, len, string};
 }
 
 #undef NEXT_CKEYWORD
@@ -1235,6 +1209,42 @@ scan_cstates(void) {
   states[OTHERS1] = cstate_others;
   done = 1;
   return states;
+}
+
+tok_t
+scan_token(scan_t * scan) {
+  def_t def = UNKNOWN;
+  state_t state = START;
+  uchar_t uchar = scan_char(scan);
+  next_t * states = scan->states();
+  size_t i = scan->i;
+  while (scan->i < scan->size) {
+    ucode_t code = uchar.code;
+    uint8_t match = 0;
+    next_t * next = &states[state];
+    scmp_t * to = next->to;
+    for (; to && to->code; to++) {
+      if (scan_is(code, to->code)) {
+        state = to->next;
+        match = 1;
+        break;
+      }
+    }
+    if (!match) {
+      if (next->def == UNKNOWN) {
+        state = next->last;
+      } else {
+        def = next->def;
+        break;
+      }
+    }
+    scan->i += uchar.len;
+    uchar = scan_char(scan);
+  }
+  size_t len = scan->i - i;
+  utf_t * string = &scan->string[i];
+  scan_debug(string, len);
+  return (tok_t) {def, len, string};
 }
 
 scan_t
@@ -1315,11 +1325,8 @@ typedef struct {
   ary_t strukt;
   ary_t meths;
   ary_t imps;  // implementation
-  utf_t * class_type;
-  utf_t * instance_type;
-  utf_t * method_prefix;
-  utf_t * init_class;
-  utf_t * init_super;
+  utf_t * cname; // class name
+  utf_t * sname; // super name
 } src_t;
 
 typedef struct {
@@ -1327,29 +1334,6 @@ typedef struct {
   ary_t srcs; // sources
   h_table * classes;
 } cclass_t;
-
-typedef struct {
-  tok_t class;
-  tok_t super;
-  ary_t strukt;
-  ary_t meths;
-  utf_t * string;
-  utf_t * header;
-  utf_t * super_header;
-  utf_t * super_type;
-  utf_t * class_type;
-  utf_t * instance_type;
-  utf_t * class_name;
-  utf_t * instance_name;
-  utf_t * super_instance_name;
-  utf_t * class_prefix;
-  utf_t * super_prefix;
-  utf_t * methods_name;
-  utf_t * instances_name;
-  utf_t * super_methods_name;
-  utf_t * super_instances_name;
-  utf_t * init_name;
-} class_t;
 
 void
 ary_new(ary_t * ary, size_t capa, size_t size) {
@@ -1394,9 +1378,6 @@ ary_free(ary_t * ary) {
 #define imp_get(toks, i) \
   ((tok_t **) (toks)->objs)[i]
 
-#define class_get(classes, i) \
-  ((class_t **) (classes)->objs)[i]
-
 #define req_get(reqs, i) \
   &((ary_t *) (reqs)->objs)[i]
 
@@ -1424,12 +1405,6 @@ ary_free(ary_t * ary) {
 #define cal_add(toks, tok) \
   ary_add(toks, tok, sizeof(cal_t *))
 
-#define class_new(classes) \
-  ary_new(classes, 2, sizeof(class_t *))
-
-#define class_add(classes, class) \
-  ary_add(classes, class, sizeof(class_t *))
-
 #define req_new(reqs) \
   ary_new(reqs, 2, sizeof(ary_t))
 
@@ -1449,17 +1424,52 @@ ary_free(ary_t * ary) {
   ary_add(chars, c, sizeof(utf_t))
 
 utf_t *
-tok_str(tok_t * tok) {
-  static utf_t buf[64] = {0};
-  size_t len = tok->len;
-  if (len >= lenof(buf)) len = lenof(buf) - 1;
-  strncpy(buf, tok->string, len);
+tok_new_str(utf_t * str, size_t len) {
+  utf_t * buf = malloc(len + 1);
+  memcpy(buf, str, len);
   buf[len] = '\0';
   return buf;
 }
 
-#define cal_str(tok) \
-  tok_str((tok_t *) (tok))
+utf_t *
+tok_cat_str(utf_t * x, size_t xlen, utf_t * y, size_t ylen) {
+  utf_t * buf = tok_new_str(x, xlen + ylen);
+  memcpy(buf + xlen, y, ylen);
+  return buf;
+}
+
+void
+tok_poffset(tok_t * tok, FILE * out, size_t offset) {
+  size_t i = 0;
+  while (i < tok->len) {
+    utf_t * str = &tok->string[i];
+    size_t len = utf8_len(str);
+    if (offset > 0) {
+      offset--;
+    } else {
+      utf_t buf[5] = {0};
+      memcpy(buf, str, len);
+      fprintf(out, "%s", buf);
+    }
+    i += len;
+  }
+}
+
+void
+tok_ptail(tok_t * tok, FILE * out) {
+  tok_poffset(tok, out, 1);
+}
+
+void
+tok_print(tok_t * tok, FILE * out) {
+  tok_poffset(tok, out, 0);
+}
+
+#define cal_ptail(tok, out) \
+  tok_ptail((tok_t *) (tok), out)
+
+#define cal_print(tok, out) \
+  tok_print((tok_t *) (tok), out)
 
 int
 tok_first_not_term(ary_t * toks) {
@@ -1472,24 +1482,26 @@ tok_first_not_term(ary_t * toks) {
 }
 
 void
-toks_print(class_t * class, ary_t * toks, size_t i) {
+toks_cprint(src_t * src, ary_t * toks, size_t i, FILE * fsrc) {
   for (; i < toks->len; i++) {
+    utf_t * cname = src->cname;
     tok_t * tok = tok_get(toks, i);
     def_t def = tok->def;
     if (def == TSELF) {
-      printf("%s", class->instance_type);
+      fprintf(fsrc, "%s_t", cname);
     } else if (def == TCLASS) {
-      printf("%s", class->class_type);
+      fprintf(fsrc, "%s_class_t", cname);
     } else if (def == SELF) {
-      printf("%s * %s", class->instance_type, tok_str(tok));
+      fprintf(fsrc, "%s_t * ", cname);
+      tok_print(tok, fsrc);
     } else {
-      printf("%s", tok_str(tok));
+      tok_print(tok, fsrc);
     }
   }
 }
 
 void
-meth_free(class_t * class) {
+meth_free(src_t * class) {
   size_t len = class->meths.len;
   size_t i = 0;
   for (; i < len; i++) {
@@ -1524,6 +1536,7 @@ cparse_require(cclass_t * class, scan_t * scan, tok_t * tok) {
     }
     * tok = parse_next(scan);
   }
+  * tok = parse_next(scan);
   req_add(&class->reqs, req);
 }
 
@@ -1536,12 +1549,14 @@ cparse_raw(cclass_t * class, scan_t * scan, tok_t * tok) {
     if (src == 0) {
       src = calloc(1, sizeof(ary_t) + sizeof(tok_t));
       tok_new(&src->toks);
-      first = tok_add(&src->toks, tok);
       src_add(&class->srcs, &src);
-    } else if (parse_test(tok, CREQUIRE)) {
+    }
+    if (parse_test(tok, CREQUIRE)) {
       cparse_require(class, scan, tok);
       first = tok;
       tok_add(&src->toks, tok);
+    } else if (src->toks.len == 0) {
+      first = tok_add(&src->toks, tok);
     } else {
       first->len += tok->len;
     }
@@ -1740,83 +1755,6 @@ cparse_header(utf_t * string, size_t size) {
   return class;
 }
 
-class_t *
-parse_header(utf_t * string, size_t size) {
-  class_t * class = calloc(1, sizeof(class_t));
-  class->string = string;
-  scan_t scan = scan_new(string, size);
-  parse_term(&scan, CLASS);
-  class->class = parse_term(&scan, ID);
-  tok_t tok = parse_next(&scan);
-  if (parse_test(&tok, EXTENDS)) {
-    parse_match(&scan, TERM);
-    class->super = parse_term(&scan, ID);
-    parse_term(&scan, LBLOCK);
-  } else {
-    tok_t * cls = &class->class;
-    static utf_t basename[] = "Object";
-    static tok_t base = {ID, STRLEN(basename), basename};
-    if (cls->len != STRLEN(basename) ||
-        memcmp(cls->string, basename, STRLEN(basename)) != 0) {
-      class->super = base;
-    }
-    parse_check(&tok, LBLOCK);
-    parse_match(&scan, TERM);
-  }
-  parse_term(&scan, STRUCT);
-  parse_match(&scan, LBLOCK);
-  size_t level = 1;
-  scan.states = scan_cstates;
-  tok = parse_next(&scan);
-  tok_new(&class->strukt);
-  tok_add(&class->strukt, &tok);
-  while (1) {
-    if (parse_test(&tok, LBLOCK)) {
-      level++;
-    } else if (parse_test(&tok, RBLOCK)) {
-      level--;
-    }
-    if (level == 0) break;
-    tok_add(&class->strukt, &tok);
-    tok = parse_next(&scan);
-  }
-  scan.states = scan_states;
-  parse_match(&scan, TERM);
-  parse_term(&scan, METHODS);
-  parse_match(&scan, LBLOCK);
-  scan.states = scan_cstates;
-  meth_t meth = {0};
-  meth_new(class, 4);
-  while (1) {
-    tok_t tok = parse_next(&scan);
-    if (parse_test(&tok, RBLOCK)) {
-      break;
-    } else if (parse_test(&tok, METHOD)) {
-      meth.or.name = tok;
-    } else if (parse_test(&tok, STAT)) {
-      meth_add(class, &meth);
-      meth = (meth_t) {0};
-    } else {
-      if (meth.nm.name.objs == NULL) {
-        tok_new(&meth.nm.name);
-        tok_add(&meth.nm.name, &tok);
-      } else if (meth.or.name.string == NULL) {
-        tok_add(&meth.or.ret, &tok);
-      } else if (meth.or.arg.objs == NULL) {
-        tok_new(&meth.or.arg);
-        tok_add(&meth.or.arg, &tok);
-      } else {
-        tok_add(&meth.or.arg, &tok);
-      }
-    }
-  }
-  ary_free(&meth.nm.name);
-  scan.states = scan_states;
-  parse_match(&scan, TERM);
-  parse_match(&scan, RBLOCK);
-  return class;
-}
-
 int
 str_is_upcase(utf_t c) {
   return c >= 'A' && c <= 'Z';
@@ -1898,7 +1836,7 @@ tok_case(utf_t * dest, utf_t * src, size_t len,
   while (i < len) {
     utf_t * str = &src[i];
     size_t len = utf8_len(str);
-    strncpy(&dest[i], str, len);
+    memcpy(&dest[i], str, len);
     if (len == 1 &&
         cmp(* str)) {
       dest[i] = yield(* str);
@@ -1930,9 +1868,11 @@ tok_inflect(utf_t * dest, tok_t * src, tok_case_t * yield) {
       yield(dest, str, wlen);
       i += wlen;
       dest += wlen;
-      * dest++ = '_';
+      if (i < src->len) {
+        * dest++ = '_';
+      }
     } else {
-      strncpy(dest, str, len);
+      memcpy(dest, str, len);
       i += len;
       dest += len;
     }
@@ -1954,52 +1894,11 @@ tok_underscore(utf_t * dest, tok_t * src) {
 typedef void tok_inflect_t(utf_t * dest, tok_t * src);
 
 utf_t *
-class_prefix(tok_t * src, utf_t * prefix, utf_t * suffix,
-             tok_inflect_t * yield) {
-  size_t plen = strlen(prefix);
-  size_t slen = strlen(suffix);
-  size_t len = (plen + src->len + tok_words(src) - 1 +
-                slen + 1);
-  utf_t * dest = malloc(len);
-  strncpy(dest, prefix, plen);
-  yield(dest + plen, src);
-  strncpy(dest + len - slen - 1, suffix, slen);
-  dest[len - 1] = '\0';
+class_inflect(tok_t * src, tok_inflect_t * yield) {
+  utf_t * dest = tok_new_str(src->string,
+                             src->len + tok_words(src) - 1);
+  yield(dest, src);
   return dest;
-}
-
-// FooBar  > O_FOO_BAR_H
-// FooBar  > o_class_foo_bar_t
-// FooBar  > o_foo_bar_t
-// FooBar => o_class_foo_bar
-// FooBar => o_foo_bar
-// FooBar  > o_class_foo_bar_
-// FooBar => o_class_foo_bar_methods
-// FooBar => o_foo_bar_instance_variables
-// FooBar => o_init_foo_bar_class
-void
-class_types(class_t * class) {
-  tok_t * klass = &class->class;
-  tok_t * super = &class->super;
-  class->header = class_prefix(klass, "O_", "_H", tok_constantize);
-  class->super_header = class_prefix(super, "", "-h.c", tok_underscore);
-  class->class_type = class_prefix(klass, "", "_class_t", tok_underscore);
-  class->super_type = class_prefix(super, "", "_class_t", tok_underscore);
-  class->instance_type = class_prefix(klass, "", "_t", tok_underscore);
-  class->class_name = class_prefix(klass, "", "_class", tok_underscore);
-  class->instance_name = class_prefix(klass, "", "", tok_underscore);
-  class->super_instance_name = class_prefix(super, "", "", tok_underscore);
-  class->class_prefix = class_prefix(klass, "", "_class_", tok_underscore);
-  class->super_prefix = class_prefix(super, "", "_class_", tok_underscore);
-  class->methods_name = class_prefix(klass, "", "_class_methods",
-                                     tok_underscore);
-  class->instances_name = class_prefix(klass, "", "_instance_variables",
-                                       tok_underscore);
-  class->super_methods_name = class_prefix(super, "", "_class_methods",
-                                           tok_underscore);
-  class->super_instances_name = class_prefix(super, "", "_instance_variables",
-                                             tok_underscore);
-  class->init_name = class_prefix(klass, "", "_class_init", tok_underscore);
 }
 
 h_table *
@@ -2018,7 +1917,7 @@ class_classes(cclass_t * class) {
 }
 
 void *
-class_source(utf_t * string, size_t size) {
+class_source(utf_t * fname, utf_t * string, size_t size) {
   cclass_t * class = cparse_header(string, size);
   h_table * classes = class_classes(class);
   h_entry * entry = classes->head;
@@ -2026,123 +1925,78 @@ class_source(utf_t * string, size_t size) {
     src_t * src = (src_t *) entry->val;
     tok_t * klass = &src->class;
     tok_t * super = &src->super;
-    src->class_type = class_prefix(klass, "", "_class_t", tok_underscore);
-    src->instance_type = class_prefix(klass, "", "_t", tok_underscore);
-    src->method_prefix = class_prefix(klass, "", "_method_", tok_underscore);
-    src->init_class = class_prefix(klass, "", "_class_init", tok_underscore);
-    src->init_super = class_prefix(super, "", "_class_init", tok_underscore);
+    src->cname = class_inflect(klass, tok_underscore);
+    src->sname = class_inflect(super, tok_underscore);
     entry = entry->back;
   }
+  class->classes = classes;
   return class;
 }
 
-void *
-class_header(utf_t * string, size_t size) {
-  class_t * class = parse_header(string, size);
-  class_types(class);
-  return class;
-}
-
-ary_t
-class_ancestors(class_t * class) {
-  ary_t ancs = {0};
-  class_new(&ancs);
-  class_add(&ancs, &class);
-  while (class->super.string != NULL) {
-    class = file_read(1, class->super_header, class_header);
-    class_add(&ancs, &class);
+// C reverse methods
+void
+class_crmeths(cclass_t * class, src_t * src, h_table * meths) {
+  if (!src) return;
+  tok_t * super = &src->super;
+  src_t * superclass = 0;
+  int get = h_get(class->classes, super->string, super->len,
+                  (h_data_t *) &superclass);
+  if (!get && super->string) {
+    printf("Please require ");
+    tok_print(super, stdout);
+    printf(".\n");
+    exit(0);
   }
-  return ancs;
+  class_crmeths(class, superclass, meths);
+  size_t len = src->meths.len;
+  size_t mi = 0;
+  for (; mi < len; mi++) {
+    meth_t * meth = meth_get(src, mi);
+    tok_t * name = &meth->or.name;
+    utf_t * str = name->string + 1;
+    size_t len = (h_size_t) (name->len - 1);
+    h_insert(meths, str, len, (h_data_t) meth);
+  }
 }
 
 h_table *
-class_meths(ary_t * ancs) {
+class_cmeths(cclass_t * class, src_t * src) {
   h_table * meths = h_init();
-  size_t i = 0;
-  for (; i < ancs->len; i++) {
-    size_t reverse = ancs->len - i - 1;
-    class_t * class = class_get(ancs, reverse);
-    size_t mi = 0;
-    for (; mi < class->meths.len; mi++) {
-      meth_t * meth = meth_get(class, mi);
-      tok_t * name = &meth->or.name;
-      h_insert(meths, name->string + 1, (h_size_t) (name->len - 1),
-               (h_data_t) meth);
-    }
-  }
+  class_crmeths(class, src, meths);
   return meths;
 }
 
 void
-class_free_types(class_t * class) {
-  free(class->header);
-  free(class->super_header);
-  free(class->class_type);
-  free(class->super_type);
-  free(class->instance_type);
-  free(class->class_name);
-  free(class->instance_name);
-  free(class->super_instance_name);
-  free(class->class_prefix);
-  free(class->super_prefix);
-  free(class->methods_name);
-  free(class->instances_name);
-  free(class->super_methods_name);
-  free(class->super_instances_name);
-  free(class->init_name);
+class_pclass(src_t * src, FILE * fsrc) {
+  fprintf(fsrc, "%s_class_t ", src->cname);
+  tok_print(&src->class, fsrc);
+  fprintf(fsrc, ";\n\n");
 }
 
 void
-class_free_ancestors(ary_t * ancs) {
-  size_t i = 0;
-  for (; i < ancs->len; i++) {
-    class_t * class = class_get(ancs, i);
-    free(class->string);
-    ary_free(&class->strukt);
-    meth_free(class);
-    class_free_types(class);
-    free(class);
-  }
-  ary_free(ancs);
-}
-
-void
-class_print(src_t * src) {
-  printf("%s %s;\n\n", src->class_type, tok_str(&src->class));
-}
-
-void
-raw_print(src_t * src) {
+class_praw(src_t * src, FILE * fsrc) {
   ary_t * toks = &src->toks;
   size_t i = 0;
   for (; i < toks->len; i++) {
     tok_t * tok = tok_get(toks, i);
-    size_t ti = 0;
-    while (ti < tok->len) {
-      utf_t * str = &tok->string[ti];
-      size_t len = utf8_len(str);
-      utf_t buf[5] = {0};
-      memcpy(buf, str, len);
-      printf("%s", buf);
-      ti += len;
-    }
+    tok_print(tok, fsrc);
   }
 }
 
 void
-tok_parg(cal_t * tok, cal_t * next, size_t * i) {
+class_parg(cal_t * tok, cal_t * next, size_t * i, FILE * fsrc) {
   if (tok->self.def == CLPARE) {
     * i += 1;
     if (next->self.def != CRPARE) {
-      printf(", ");
+      fprintf(fsrc, ", ");
     }
   } else {
-    printf(")");
+    fprintf(fsrc, ")");
   }
 }
 
 void
-src_print(src_t * src) {
+class_psrc(src_t * src, FILE * fsrc) {
   ary_t * toks = &src->toks;
   size_t i = 0;
   for (; i < toks->len; i++) {
@@ -2150,53 +2004,63 @@ src_print(src_t * src) {
     def_t def = tok->self.def;
     if (def != CTERM) break;
   }
+  utf_t * cname = src->cname;
   for (; i < toks->len; i++) {
     cal_t * tok = cal_get(toks, i);
     cal_t * next = cal_get(toks, i + 1);
     cal_t * nnxt = cal_get(toks, i + 2);
-    size_t len = utf8_len(((tok_t *) tok)->string);
     tok_t * name = &tok->name;
     def_t def = tok->self.def;
     if (def == CTSELF) {
-      printf("%s", src->instance_type);
+      fprintf(fsrc, "%s_t", cname);
     } else if (def == CTCLASS) {
-      printf("%s", src->class_type);
+      fprintf(fsrc, "%s_class_t", cname);
     } else if (def == CMETHOD) {
-      printf("%s%s", src->method_prefix, cal_str(tok) + 1);
+      fprintf(fsrc, "%s_method_", cname);
+      cal_ptail(tok, fsrc);
     } else if (def == CSELF) {
-      printf("%s * %s", src->instance_type, cal_str(tok));
+      fprintf(fsrc, "%s_t * ", cname);
+      cal_print(tok, fsrc);
     } else if (def == CINSTANCE) {
-      printf("self->%s", cal_str(tok) + 1);
+      fprintf(fsrc, "self->");
+      cal_ptail(tok, fsrc);
     } else if (def == CSUCALL) {
-      printf("self->_.super->%s(self", cal_str(tok) + len);
-      tok_parg(next, nnxt, &i);
+      fprintf(fsrc, "self->_.super->");
+      cal_ptail(tok, fsrc);
+      fprintf(fsrc, "(self");
+      class_parg(next, nnxt, &i, fsrc);
     } else if (def == CSUMCALL) {
-      size_t len = utf8_len(name->string);
-      printf("self->_.super->%s(self", tok_str(name) + len);
-      tok_parg(next, nnxt, &i);
+      fprintf(fsrc, "self->_.super->");
+      tok_ptail(name, fsrc);
+      fprintf(fsrc, "(self");
+      class_parg(next, nnxt, &i, fsrc);
     } else if (def == CSEMCALL) {
-      printf("self->_->%s(self", cal_str(tok) + len);
-      tok_parg(next, nnxt, &i);
+      fprintf(fsrc, "self->_->");
+      cal_ptail(tok, fsrc);
+      fprintf(fsrc, "(self");
+      class_parg(next, nnxt, &i, fsrc);
     } else if (def == CIDMCALL) {
-      printf("%s->_->", cal_str(tok));
-      size_t len = utf8_len(name->string);
-      printf("%s(", tok_str(name) + len);
-      printf("%s", cal_str(tok));
-      tok_parg(next, nnxt, &i);
+      cal_print(tok, fsrc);
+      fprintf(fsrc, "->_->");
+      tok_ptail(name, fsrc);
+      fprintf(fsrc, "(");
+      cal_print(tok, fsrc);
+      class_parg(next, nnxt, &i, fsrc);
     } else if (def == CSTMCALL) {
-      printf("%s._->", cal_str(tok));
-      size_t len = utf8_len(name->string);
-      printf("%s(", tok_str(name) + len);
-      printf("%s", cal_str(tok));
-      tok_parg(next, nnxt, &i);
+      cal_print(tok, fsrc);
+      fprintf(fsrc, "._->");
+      tok_ptail(name, fsrc);
+      fprintf(fsrc, "(");
+      cal_print(tok, fsrc);
+      class_parg(next, nnxt, &i, fsrc);
     } else {
-      printf("%s", cal_str(tok));
+      cal_print(tok, fsrc);
     }
   }
 }
 
 void
-meth_print(src_t * src) {
+class_pmeth(src_t * src, FILE * fsrc) {
   ary_t * toks = &src->toks;
   size_t len = toks->len;
   if (len >= 2) len = 2;
@@ -2205,111 +2069,153 @@ meth_print(src_t * src) {
     size_t reverse = toks->len - i - 1;
     cal_t * tok = cal_get(toks, reverse);
     def_t def = tok->self.def;
-    if (def != CTERM) puts("\n");
+    if (def != CTERM) fprintf(fsrc, "\n\n");
   }
-  puts("void");
-  printf("%s(void) {\n", src->init_class);
-  printf("  %s();\n", src->init_super);
-  printf("  o_init_class((Object *) &%s", tok_str(&src->class));
-  printf(", (Object *) &%s", tok_str(&src->super));
-  printf(", \"%s\",\n", tok_str(&src->class));
-  printf("    sizeof(%s), sizeof(%s));\n",
-         src->class_type,
-         src->instance_type);
+  utf_t * cname = src->cname;
+  utf_t * sname = src->sname;
+  tok_t * class = &src->class;
+  tok_t * super = &src->super;
+  fprintf(fsrc, "void\n");
+  fprintf(fsrc, "%s_class_init(void) {\n", cname);
+  if (src->super.string == NULL) {
+    fprintf(fsrc, "  o_init_class(&");
+    tok_print(class, fsrc);
+    fprintf(fsrc, ", 0");
+  } else {
+    fprintf(fsrc, "  %s_class_init();\n", sname);
+    fprintf(fsrc, "  o_init_class((Object *) &");
+    tok_print(class, fsrc);
+    fprintf(fsrc, ", (Object *) &");
+    tok_print(super, fsrc);
+  }
+  fprintf(fsrc, ", \"");
+  tok_print(class, fsrc);
+  fprintf(fsrc, "\",\n");
+  fprintf(fsrc, "    sizeof(%s_class_t), sizeof(%s_t));\n", cname, cname);
   ary_t * imps = &src->imps;
   i = 0;
   for (; i < imps->len; i++) {
     tok_t * tok = imp_get(imps, i);
-    printf("  %s.", tok_str(&src->class));
-    size_t len = utf8_len(tok->string);
-    printf("%s = %s", tok_str(tok) + len, src->method_prefix);
-    printf("%s;\n", tok_str(tok) + len);
+    fprintf(fsrc, "  ");
+    tok_print(class, fsrc);
+    fprintf(fsrc, ".");
+    tok_ptail(tok, fsrc);
+    fprintf(fsrc, " = %s_method_", cname);
+    tok_ptail(tok, fsrc);
+    fprintf(fsrc, ";\n");
   }
-  puts("}\n");
+  fprintf(fsrc, "}\n\n");
+}
+
+
+fread_t build_source;
+
+void
+class_pstruct(src_t * src, h_table * classes, FILE * fsrc) {
+  tok_t * super = &src->super;
+  src_t * superclass = 0;
+  h_get(classes, super->string, super->len, (h_data_t *) &superclass);
+  if (src->super.string) {
+    class_pstruct(superclass, classes, fsrc);
+  }
+  toks_cprint(src, &src->strukt, 1, fsrc);
+}
+
+void
+class_pstructs(cclass_t * class, FILE * fsrc) {
+  h_table * classes = class->classes;
+  h_entry * klass = classes->head;
+  while (klass) {
+    src_t * src = (src_t *) klass->val;
+    utf_t * cname = src->cname;
+    fprintf(fsrc, "typedef struct %s_class %s_class_t;\n", cname, cname);
+    fprintf(fsrc, "typedef struct %s %s_t;\n\n", cname, cname);
+    fprintf(fsrc, "extern %s_class_t ", cname);
+    tok_print(&src->class, fsrc);
+    fprintf(fsrc, ";\n\n");
+    fprintf(fsrc, "struct %s_class {\n", cname);
+    h_table * meths = class_cmeths(class, src);
+    h_entry * entry = meths->head;
+    while (entry) {
+      meth_t * meth = (meth_t *) entry->val;
+      tok_t * name = &meth->or.name;
+      if (name->string != NULL) {
+        fprintf(fsrc, "  ");
+        size_t i = tok_first_not_term(&meth->or.ret);
+        toks_cprint(src, &meth->or.ret, i, fsrc);
+        tok_ptail(name, fsrc);
+        toks_cprint(src, &meth->or.arg, 0, fsrc);
+        fprintf(fsrc, ";\n");
+      }
+      entry = entry->back;
+    }
+    h_free(meths);
+    fprintf(fsrc, "};\n\n");
+    fprintf(fsrc, "  struct %s {", cname);
+    class_pstruct(src, classes, fsrc);
+    fprintf(fsrc, "};\n\n");
+    fprintf(fsrc, "void %s_class_init(void);\n\n", cname);
+    klass = klass->back;
+  }
+  fprintf(fsrc, "\n");
+}
+
+void
+class_require(cclass_t * class, utf_t * fname, h_table * fnames) {
+  h_table * classes = class->classes;
+  ary_t * reqs = &class->reqs;
+  size_t i = 0;
+  for (; i < reqs->len; i++) {
+    ary_t * req = req_get(reqs, i);
+    utf_t * str = utf_get(req, 0);
+    size_t len = req->len;
+    utf_t * fname = tok_new_str(str, len);
+    int get = h_get(fnames, fname, len, (h_data_t *) &class);
+    if (!get) {
+      class = file_read(1, fname, build_source, fnames);
+    }
+    h_table * cclasses = class->classes;
+    h_merge(classes, cclasses);
+    h_free(cclasses);
+    free(fname);
+  }
 }
 
 void *
-build_source(utf_t * string, size_t size) {
-  cclass_t * class = class_source(string, size);
+build_source(utf_t * fname, utf_t * string, size_t size, void * fnames) {
+  cclass_t * class = class_source(fname, string, size);
+  h_insert(fnames, fname, strlen(fname), (h_data_t) class);
+  class_require(class, fname, fnames);
+  // file write name
+  utf_t ext[] = ".c";
+  utf_t * fwname = tok_cat_str(fname, strlen(fname),
+                               ext,   strlen(ext));
+  printf("Generating %s ... ", fwname);
+  FILE * fsrc = fopen(fwname, "w");
+  class_pstructs(class, fsrc);
   ary_t * srcs = &class->srcs;
   size_t i = 0;
   for (; i < srcs->len; i++) {
     src_t * src = src_get(srcs, i);
     if (src->class.string == NULL) {
-      raw_print(src);
+      class_praw(src, fsrc);
     } else {
-      class_print(src);
-      src_print(src);
-      meth_print(src);
+      class_pclass(src, fsrc);
+      class_psrc(src, fsrc);
+      class_pmeth(src, fsrc);
     }
   }
-  ary_t * reqs = &class->reqs;
-  i = 0;
-  for (; i < reqs->len; i++) {
-    ary_t * req = req_get(reqs, i);
-    utf_t * string = utf_get(req, 0);
-    printf("require \"");
-    size_t ti = 0;
-    while (ti < req->len) {
-      utf_t * str = &string[ti];
-      size_t len = utf8_len(str);
-      utf_t buf[5] = {0};
-      memcpy(buf, str, len);
-      printf("%s", buf);
-      ti += len;
-    }
-    printf("\"\n");
-  }
+  printf("OK\n");
+  free(fwname);
+  return class;
 }
 
 void *
-build_header(utf_t * string, size_t size) {
-  class_t * class = class_header(string, size);
-  ary_t ancs = class_ancestors(class);
-  h_table * meths = class_meths(&ancs);
-  printf("#ifndef %s\n", class->header);
-  printf("#define %s\n", class->header);
-  puts("");
-  printf("#include \"%s.h\"\n", class->super_instance_name);
-  puts("");
-  printf("typedef struct %s %s;\n", class->class_name, class->class_type);
-  printf("typedef struct %s %s;\n", class->instance_name, class->instance_type);
-  puts("");
-  printf("struct %s {\n", class->class_name);
-  h_entry * entry = meths->head;
-  while (entry) {
-    meth_t * meth = (meth_t *) entry->val;
-    tok_t * name = &meth->or.name;
-    if (name->string != NULL) {
-      printf("  ");
-      size_t i = tok_first_not_term(&meth->or.ret);
-      toks_print(class, &meth->or.ret, i);
-      utf_t * string = tok_str(name);
-      printf("%s", string + utf8_len(string));
-      toks_print(class, &meth->or.arg, 0);
-      printf(";\n");
-    }
-    entry = entry->back;
-  }
-  h_free(meths);
-  printf("};\n");
-  puts("");
-  printf("extern %s %s;\n", class->class_type, tok_str(&class->class));
-  puts("");
-  printf("  struct %s {", class->instance_name);
-  size_t i = 0;
-  for (; i < ancs.len; i++) {
-    size_t reverse = ancs.len - i - 1;
-    class_t * klass = class_get(&ancs, reverse);
-    toks_print(class, &klass->strukt, 1);
-  }
-  printf("};\n");
-  puts("");
-  printf("void %s(void);\n", class->init_name);
-  puts("");
-  printf("#endif\n");
-  class_free_ancestors(&ancs);
-  return (void *) 1;
+build_source_start(utf_t * fname, utf_t * string, size_t size, void * unused) {
+  h_table * fnames = h_init();
+  cclass_t * class = build_source(fname, string, size, fnames);
+  h_free(fnames);
+  h_table * classes = class->classes;
 }
 
 typedef enum {
@@ -2321,7 +2227,7 @@ typedef enum {
 action
 scan_args(int argc, utf_t ** argv) {
   if (argc <= 1) {
-    puts("no input");
+    puts("no input file");
     exit(0);
   }
   if (argc == 2) {
@@ -2338,10 +2244,10 @@ int
 main(int argc, utf_t ** argv) {
   action act = scan_args(argc, argv);
   if (act == SOURCE) {
-    file_read(argc - 1, argv[1], build_source);
+    file_read(argc - 1, argv[1], build_source_start, 0);
   }
   if (act == HEADER) {
-    file_read(argc - 2, argv[2], build_header);
+    //file_read(argc - 2, argv[2], build_header, 0);
   }
   return 0;
 }
