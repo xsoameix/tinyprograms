@@ -571,26 +571,27 @@ typedef enum {
   CBQUOTE,   //17  [back slash]"
   CTERM,     //18  0x0A
   CSUCALL,   //19  super call, eg. super(), used in parsing, not scan,
-  CSUMCALL,  //10  super method call, eg. super[middle dot]foo()
+  CSUMCALL,  //20  super method call, eg. super[middle dot]foo()
   CSEMCALL,  //21  self method call, eg. [middle dot]foo()
   CIDMCALL,  //22  id method call, eg. bar[middle dot]foo()
   CSTMCALL,  //23  static id method call, eg. bar[low grave accent]foo()
+  CFREQUIRE, //24  require file name, eg. require "abc.c"
 
-  CLASS,     //24  class
-  EXTENDS,   //25  <
-  LBLOCK,    //26  {
-  RBLOCK,    //27  }
-  STRUCT,    //28  struct
-  METHODS,   //29  methods
-  TERM,      //30  [\r\n\s]+
+  CLASS,     //25  class
+  EXTENDS,   //26  <
+  LBLOCK,    //27  {
+  RBLOCK,    //28  }
+  STRUCT,    //29  struct
+  METHODS,   //20  methods
+  TERM,      //31  [\r\n\s]+
 
-  SELF,      //31  self
-  ID,        //32  [a-zA-Z_][a-zA-Z_1-9]*
-  METHOD,    //33  :
-  STAT,      //34  ;
-  TSELF,     //35  [middle dot]
-  TCLASS,    //36  [middle dot][middle dot]
-  OTHERS     //37  .*
+  SELF,      //32  self
+  ID,        //33  [a-zA-Z_][a-zA-Z_1-9]*
+  METHOD,    //34  :
+  STAT,      //35  ;
+  TSELF,     //36  [middle dot]
+  TCLASS,    //37  [middle dot][middle dot]
+  OTHERS     //38  .*
 } def_t;
 
 typedef struct {
@@ -985,7 +986,7 @@ static next_t cstate_cbslash1 = {
 };
 static next_t cstate_cbslash2 = FINISHED_CHAR(CBQUOTE);
 static next_t cstate_cterm = FINISHED_CHAR(CTERM);
-static next_t cstate_cothers = FINISHED_CHAR(OTHERS1);
+static next_t cstate_cothers = FINISHED_CHAR(OTHERS);
 
 next_t *
 cscan_states(void) {
@@ -1322,6 +1323,7 @@ typedef struct {
 } src_t;
 
 typedef struct {
+  ary_t reqs; // require
   ary_t srcs; // sources
   h_table * classes;
 } cclass_t;
@@ -1395,8 +1397,14 @@ ary_free(ary_t * ary) {
 #define class_get(classes, i) \
   ((class_t **) (classes)->objs)[i]
 
+#define req_get(reqs, i) \
+  &((ary_t *) (reqs)->objs)[i]
+
 #define src_get(srcs, i) \
   ((src_t **) (srcs)->objs)[i]
+
+#define utf_get(chars, i) \
+  &((utf_t *) (chars)->objs)[i]
 
 #define imp_new(toks, capa) \
   ary_new(toks, capa, sizeof(tok_t *))
@@ -1422,11 +1430,23 @@ ary_free(ary_t * ary) {
 #define class_add(classes, class) \
   ary_add(classes, class, sizeof(class_t *))
 
+#define req_new(reqs) \
+  ary_new(reqs, 2, sizeof(ary_t))
+
+#define req_add(reqs, req) \
+  ary_add(reqs, req, sizeof(ary_t))
+
 #define src_new(srcs) \
   ary_new(srcs, 2, sizeof(src_t *))
 
 #define src_add(srcs, src) \
   ary_add(srcs, src, sizeof(src_t *))
+
+#define utf_new(chars) \
+  ary_new(chars, 2, sizeof(utf_t))
+
+#define utf_add(chars, c) \
+  ary_add(chars, c, sizeof(utf_t))
 
 utf_t *
 tok_str(tok_t * tok) {
@@ -1485,6 +1505,29 @@ meth_free(class_t * class) {
 }
 
 void
+cparse_require(cclass_t * class, scan_t * scan, tok_t * tok) {
+  parse_match(scan, OTHERS);
+  parse_match(scan, CQUOTE);
+  ary_t * req = calloc(1, sizeof(ary_t));
+  utf_new(req);
+  * tok = parse_next(scan);
+  while (!parse_test(tok, CQUOTE)) {
+    utf_t * string = tok->string;
+    size_t len = tok->len;
+    if (parse_test(tok, CBQUOTE)) {
+      string++, len--;
+    }
+    size_t i = 0;
+    for (; i < len; i++) {
+      utf_t * str = &string[i];
+      utf_add(req, str);
+    }
+    * tok = parse_next(scan);
+  }
+  req_add(&class->reqs, req);
+}
+
+void
 cparse_raw(cclass_t * class, scan_t * scan, tok_t * tok) {
   tok_t * first = 0;
   src_t * src = 0;
@@ -1495,6 +1538,10 @@ cparse_raw(cclass_t * class, scan_t * scan, tok_t * tok) {
       tok_new(&src->toks);
       first = tok_add(&src->toks, tok);
       src_add(&class->srcs, &src);
+    } else if (parse_test(tok, CREQUIRE)) {
+      cparse_require(class, scan, tok);
+      first = tok;
+      tok_add(&src->toks, tok);
     } else {
       first->len += tok->len;
     }
@@ -1682,6 +1729,7 @@ cparse_src(cclass_t * class, scan_t * scan, tok_t * tok) {
 cclass_t *
 cparse_header(utf_t * string, size_t size) {
   cclass_t * class = calloc(1, sizeof(cclass_t));
+  req_new(&class->reqs);
   src_new(&class->srcs);
   scan_t scan = cscan_new(string, size);
   tok_t tok = parse_next(&scan);
@@ -2194,6 +2242,23 @@ build_source(utf_t * string, size_t size) {
       src_print(src);
       meth_print(src);
     }
+  }
+  ary_t * reqs = &class->reqs;
+  i = 0;
+  for (; i < reqs->len; i++) {
+    ary_t * req = req_get(reqs, i);
+    utf_t * string = utf_get(req, 0);
+    printf("require \"");
+    size_t ti = 0;
+    while (ti < req->len) {
+      utf_t * str = &string[ti];
+      size_t len = utf8_len(str);
+      utf_t buf[5] = {0};
+      memcpy(buf, str, len);
+      printf("%s", buf);
+      ti += len;
+    }
+    printf("\"\n");
   }
 }
 
