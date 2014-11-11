@@ -1,3 +1,23 @@
+typedef struct object_class object_class_t;
+typedef struct object object_t;
+
+extern object_class_t Object;
+
+struct object_class {
+  object_t *    (* new)       (void);
+  void   (* init)      (object_t * self);
+  void   (* delete)    (object_t * self);
+};
+
+  struct object {
+    union {
+      object_class_t * class;
+      object_class_t * _;
+    };
+  };
+
+void object_class_init(void);
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -5,22 +25,26 @@
 #include <string.h>
 #include <inttypes.h>
 
-//void
-//class_init(objec_class_t * class, objec_class_t * super, char * class_name,
-//           size_t class_size, size_t instance_size) {
-//  if (class->size != 0) return;
-//  class->super = super;
-//  class->name = class_name;
-//  class->size = class_size;
-//  class->instance_size = instance_size;
-//  // inherit
-//  size_t offset = offsetof(o_class_type, new);
-//  if (class != &OObject) {
-//    memcpy((char *) class + offset,
-//           (char *) class->super + offset,
-//           class->super->size - offset);
-//  }
-//}
+object_class_t Object;
+
+void
+class_init(object_class_t * class, object_class_t * super, char * class_name,
+           size_t class_size, size_t instance_size) {
+  if (class->size != 0) return;
+  class->super = super;
+  class->name = class_name;
+  class->size = class_size;
+  class->instance_size = instance_size;
+  // inherit
+  size_t offset = offsetof(o_class_type, new);
+  if (class != &OObject) {
+    memcpy((char *) class + offset,
+           (char *) class->super + offset,
+           class->super->size - offset);
+  }
+}
+
+:end
 
 typedef uint8_t utf_t;
 
@@ -598,7 +622,7 @@ typedef enum {
   CBSLASH,   //16  [back slash]
   CBQUOTE,   //17  [back slash]"
   CTERM,     //18  0x0A
-  CSUCALL,   //19  super call, eg. super(), used in parsing, not scan,
+  CSUCALL,   //19  super call, eg. self->_.super->(self), used in parsing, not scan,
   CSUMCALL,  //20  super method call, eg. super[middle dot]foo()
   CSEMCALL,  //21  self method call, eg. [middle dot]foo()
   CIDMCALL,  //22  id method call, eg. bar[middle dot]foo()
@@ -1734,10 +1758,13 @@ cparse_src(cclass_t * class, scan_t * scan, tok_t * tok) {
   scan->states = cscan_states;
   * tok = parse_next(scan);
   tok_t meth = {0};
-  while (!parse_test(tok, CEND) &&
-         !parse_test(tok, CCLASS) &&
+  while (!parse_test(tok, CCLASS) &&
          !scan->eof) {
-    if (parse_test(tok, CTCLASS)) {
+    if (parse_test(tok, CEND)) {
+      puts("CEND !!!");
+      * tok = parse_next(scan);
+      break;
+    } else if (parse_test(tok, CTCLASS)) {
       cal_add_cpy(src, tok);
     } else if (parse_test(tok, CTSELF)) {
       cal_add_cpy(src, tok);
@@ -2378,3 +2405,10 @@ main(int argc, utf_t ** argv) {
   }
   return 0;
 }
+
+void
+object_class_init(void) {
+  class_init(&Object, 0, "Object",
+    sizeof(object_class_t), sizeof(object_t));
+}
+

@@ -4,23 +4,6 @@
 #include <string.h>
 #include <inttypes.h>
 
-//void
-//class_init(objec_class_t * class, objec_class_t * super, char * class_name,
-//           size_t class_size, size_t instance_size) {
-//  if (class->size != 0) return;
-//  class->super = super;
-//  class->name = class_name;
-//  class->size = class_size;
-//  class->instance_size = instance_size;
-//  // inherit
-//  size_t offset = offsetof(o_class_type, new);
-//  if (class != &OObject) {
-//    memcpy((char *) class + offset,
-//           (char *) class->super + offset,
-//           class->super->size - offset);
-//  }
-//}
-
 typedef uint8_t utf_t;
 
 // Fowler–Noll–Vo hash function
@@ -975,8 +958,8 @@ static next_t cstate_cclass[] = {
   NEXT_CMETHOD(CCLASS)
 };
 static next_t cstate_cend[] = {
-  NEXT_CKEYWORD('n', CEND1, dnot_n),
-  NEXT_CKEYWORD('d', CEND2, dnot_d),
+  NEXT_CKEYWORD('n', CEND2, dnot_n),
+  NEXT_CKEYWORD('d', CEND3, dnot_d),
   NEXT_CMETHOD(CEND)
 };
 static next_t cstate_cinstance1 = {
@@ -1733,10 +1716,12 @@ cparse_src(cclass_t * class, scan_t * scan, tok_t * tok) {
   scan->states = cscan_states;
   * tok = parse_next(scan);
   tok_t meth = {0};
-  while (!parse_test(tok, CEND) &&
-         !parse_test(tok, CCLASS) &&
+  while (!parse_test(tok, CCLASS) &&
          !scan->eof) {
-    if (parse_test(tok, CTCLASS)) {
+    if (parse_test(tok, CEND)) {
+      * tok = parse_next(scan);
+      break;
+    } else if (parse_test(tok, CTCLASS)) {
       cal_add_cpy(src, tok);
     } else if (parse_test(tok, CTSELF)) {
       cal_add_cpy(src, tok);

@@ -58,6 +58,9 @@ object_method_is_a(object_t * self, object_class_t * class) {
   return 0;
 }
 
+:end
+
+
 void
 object_class_init(void) {
   class_init(&Object, 0, "Object",
