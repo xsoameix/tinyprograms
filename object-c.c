@@ -11,7 +11,7 @@
     · *    (* -new)       (void);
     void   (* -init)      (self);
     void   (* -delete)    (self);
-    ·· *   (* -class)     (self);
+    ·· *   (* -klass)     (self);
     char * (* -class_name)(self);
     int    (* -is_a)      (self, ·· * class);
   }
@@ -32,7 +32,7 @@ static void
 }
 
 static ·· *
-:class(self) {
+:klass(self) {
   return @class;
 }
 

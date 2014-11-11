@@ -7,9 +7,9 @@ struct string_class {
   string_t *    (* new)   (char *);
   void   (* init)  (string_t * self, char *);
   void   (* delete)    (string_t * self);
-  string_class_t *   (* class)     (string_t * self);
+  string_class_t *   (* klass)     (string_t * self);
   char * (* class_name)(string_t * self);
-  bool   (* is_a)      (string_t * self, string_class_t * class);
+  int    (* is_a)      (string_t * self, string_class_t * class);
   char * (* string)(string_t * self);
   size_t (* len)   (string_t * self);
   size_t (* s2i)   (string_t * self);
@@ -17,8 +17,8 @@ struct string_class {
 
   struct string {
     union {
-      object_class_t * class;
-      object_class_t * _;
+      string_class_t * class;
+      string_class_t * _;
     };
   
     char * string;
@@ -35,16 +35,16 @@ struct array_class {
   array_t *    (* new)       (void);
   void   (* init)      (array_t * self);
   void   (* delete)    (array_t * self);
-  array_class_t *   (* class)     (array_t * self);
+  array_class_t *   (* klass)     (array_t * self);
   char * (* class_name)(array_t * self);
-  bool   (* is_a)      (array_t * self, array_class_t * class);
+  int    (* is_a)      (array_t * self, array_class_t * class);
   size_t (* len)(array_t * self);
 };
 
   struct array {
     union {
-      object_class_t * class;
-      object_class_t * _;
+      array_class_t * class;
+      array_class_t * _;
     };
   
     size_t len;
@@ -61,9 +61,9 @@ struct object_class {
   object_t *    (* new)       (void);
   void   (* init)      (object_t * self);
   void   (* delete)    (object_t * self);
-  object_class_t *   (* class)     (object_t * self);
+  object_class_t *   (* klass)     (object_t * self);
   char * (* class_name)(object_t * self);
-  bool   (* is_a)      (object_t * self, object_class_t * class);
+  int    (* is_a)      (object_t * self, object_class_t * class);
 };
 
   struct object {

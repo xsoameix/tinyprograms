@@ -1330,6 +1330,7 @@ typedef struct {
 } src_t;
 
 typedef struct {
+  utf_t * string; // file string
   ary_t reqs; // require
   ary_t srcs; // sources
   h_table * classes;
@@ -1433,8 +1434,11 @@ tok_new_str(utf_t * str, size_t len) {
 
 utf_t *
 tok_cat_str(utf_t * x, size_t xlen, utf_t * y, size_t ylen) {
-  utf_t * buf = tok_new_str(x, xlen + ylen);
+  size_t len = xlen + ylen;
+  utf_t * buf = malloc(len + 1);
+  memcpy(buf, x, xlen);
   memcpy(buf + xlen, y, ylen);
+  buf[len] = '\0';
   return buf;
 }
 
@@ -1501,27 +1505,11 @@ toks_cprint(src_t * src, ary_t * toks, size_t i, FILE * fsrc) {
 }
 
 void
-meth_free(src_t * class) {
-  size_t len = class->meths.len;
-  size_t i = 0;
-  for (; i < len; i++) {
-    meth_t * meth = meth_get(class, i);
-    if (meth->or.name.string == NULL) {
-      ary_free(&meth->nm.name);
-    } else {
-      ary_free(&meth->or.ret);
-      ary_free(&meth->or.arg);
-    }
-  }
-  ary_free(&class->meths);
-}
-
-void
 cparse_require(cclass_t * class, scan_t * scan, tok_t * tok) {
   parse_match(scan, OTHERS);
   parse_match(scan, CQUOTE);
-  ary_t * req = calloc(1, sizeof(ary_t));
-  utf_new(req);
+  ary_t req = {0};
+  utf_new(&req);
   * tok = parse_next(scan);
   while (!parse_test(tok, CQUOTE)) {
     utf_t * string = tok->string;
@@ -1532,12 +1520,12 @@ cparse_require(cclass_t * class, scan_t * scan, tok_t * tok) {
     size_t i = 0;
     for (; i < len; i++) {
       utf_t * str = &string[i];
-      utf_add(req, str);
+      utf_add(&req, str);
     }
     * tok = parse_next(scan);
   }
   * tok = parse_next(scan);
-  req_add(&class->reqs, req);
+  req_add(&class->reqs, &req);
 }
 
 void
@@ -1919,6 +1907,7 @@ class_classes(cclass_t * class) {
 void *
 class_source(utf_t * fname, utf_t * string, size_t size) {
   cclass_t * class = cparse_header(string, size);
+  class->string = string;
   h_table * classes = class_classes(class);
   h_entry * entry = classes->head;
   while (entry) {
@@ -2111,14 +2100,14 @@ class_pmeth(src_t * src, FILE * fsrc) {
 fread_t build_source;
 
 void
-class_pstruct(src_t * src, h_table * classes, FILE * fsrc) {
-  tok_t * super = &src->super;
+class_pstruct(src_t * src, src_t * base, h_table * classes, FILE * fsrc) {
+  tok_t * super = &base->super;
   src_t * superclass = 0;
   h_get(classes, super->string, super->len, (h_data_t *) &superclass);
-  if (src->super.string) {
-    class_pstruct(superclass, classes, fsrc);
+  if (base->super.string) {
+    class_pstruct(src, superclass, classes, fsrc);
   }
-  toks_cprint(src, &src->strukt, 1, fsrc);
+  toks_cprint(src, &base->strukt, 1, fsrc);
 }
 
 void
@@ -2152,12 +2141,115 @@ class_pstructs(cclass_t * class, FILE * fsrc) {
     h_free(meths);
     fprintf(fsrc, "};\n\n");
     fprintf(fsrc, "  struct %s {", cname);
-    class_pstruct(src, classes, fsrc);
+    class_pstruct(src, src, classes, fsrc);
     fprintf(fsrc, "};\n\n");
     fprintf(fsrc, "void %s_class_init(void);\n\n", cname);
     klass = klass->back;
   }
   fprintf(fsrc, "\n");
+}
+
+void
+class_freqs(cclass_t * class) {
+  ary_t * reqs = &class->reqs;
+  size_t i = 0;
+  for (; i < reqs->len; i++) {
+    ary_t * req = req_get(reqs, i);
+    ary_free(req);
+  }
+  ary_free(reqs);
+}
+
+void
+class_ftoks(src_t * src) {
+  ary_t * toks = &src->toks;
+  if (src->class.string) {
+    size_t i = 0;
+    for (; i < toks->len; i++) {
+      cal_t * tok = cal_get(toks, i);
+      free(tok);
+    }
+  }
+  ary_free(toks);
+}
+
+void
+class_fstruct(src_t * src) {
+  ary_free(&src->strukt);
+}
+
+void
+class_fmeths(src_t * class) {
+  size_t len = class->meths.len;
+  size_t i = 0;
+  for (; i < len; i++) {
+    meth_t * meth = meth_get(class, i);
+    if (meth->or.name.string == NULL) {
+      ary_free(&meth->nm.name);
+    } else {
+      ary_free(&meth->or.ret);
+      ary_free(&meth->or.arg);
+    }
+  }
+  ary_free(&class->meths);
+}
+
+void
+class_fimps(src_t * src) {
+  ary_free(&src->imps);
+}
+
+void
+class_fsrc(src_t * src) {
+  if (src->class.string) {
+    class_fimps(src);
+    free(src->sname);
+  } else {
+    free(src);
+  }
+}
+
+void
+class_fsrcs(cclass_t * class) {
+  ary_t * srcs = &class->srcs;
+  size_t i = 0;
+  for (; i < srcs->len; i++) {
+    src_t * src = src_get(srcs, i);
+    class_ftoks(src);
+    class_fsrc(src);
+  }
+  ary_free(srcs);
+}
+
+void
+class_free(cclass_t * class) {
+  class_freqs(class);
+  class_fsrcs(class);
+}
+
+void
+class_fclasses(cclass_t * class, h_table * fnames, utf_t * fname) {
+  h_table * classes = class->classes;
+  h_entry * entry = classes->head;
+  while (entry) {
+    src_t * src = (src_t *) entry->val;
+    class_fstruct(src);
+    class_fmeths(src);
+    free(src->cname);
+    free(src);
+    entry = entry->back;
+  }
+  h_free(classes);
+  entry = fnames->head;
+  while (entry) {
+    utf_t * name = entry->key;
+    cclass_t * klass = (cclass_t *) entry->val;
+    if (name != fname) free(name);
+    free(klass->string);
+    free(klass);
+    entry = entry->back;
+  }
+  h_free(fnames);
 }
 
 void
@@ -2177,7 +2269,6 @@ class_require(cclass_t * class, utf_t * fname, h_table * fnames) {
     h_table * cclasses = class->classes;
     h_merge(classes, cclasses);
     h_free(cclasses);
-    free(fname);
   }
 }
 
@@ -2207,6 +2298,7 @@ build_source(utf_t * fname, utf_t * string, size_t size, void * fnames) {
   }
   printf("OK\n");
   free(fwname);
+  class_free(class);
   return class;
 }
 
@@ -2214,8 +2306,7 @@ void *
 build_source_start(utf_t * fname, utf_t * string, size_t size, void * unused) {
   h_table * fnames = h_init();
   cclass_t * class = build_source(fname, string, size, fnames);
-  h_free(fnames);
-  h_table * classes = class->classes;
+  class_fclasses(class, fnames, fname);
 }
 
 typedef enum {
