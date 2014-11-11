@@ -35,7 +35,7 @@ object_method_initialize(object_t * self) {
 
 static void
 object_method_delete(object_t * self) {
-  free(object_t * self);
+  free(self);
 }
 
 static object_class_t *
@@ -44,7 +44,7 @@ object_method_klass(object_t * self) {
 }
 
 static char *
-:class_name(object_t * self) {
+object_method_class_name(object_t * self) {
   return self->class->name;
 }
 
@@ -60,12 +60,13 @@ object_method_is_a(object_t * self, object_class_t * class) {
 
 void
 object_class_init(void) {
-  o_init_class(&Object, 0, "Object",
+  class_init(&Object, 0, "Object",
     sizeof(object_class_t), sizeof(object_t));
   Object.new = object_method_new;
   Object.initialize = object_method_initialize;
   Object.delete = object_method_delete;
   Object.klass = object_method_klass;
+  Object.class_name = object_method_class_name;
   Object.is_a = object_method_is_a;
 }
 
