@@ -1,50 +1,9 @@
-typedef struct object_class object_class_t;
-typedef struct object object_t;
-
-extern object_class_t Object;
-
-struct object_class {
-  object_t *    (* new)       (void);
-  void   (* init)      (object_t * self);
-  void   (* delete)    (object_t * self);
-};
-
-  struct object {
-    union {
-      object_class_t * class;
-      object_class_t * _;
-    };
-  };
-
-void object_class_init(void);
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stddef.h>
 #include <string.h>
 #include <inttypes.h>
-
-object_class_t Object;
-
-void
-class_init(object_class_t * class, object_class_t * super, char * class_name,
-           size_t class_size, size_t instance_size) {
-  if (class->size != 0) return;
-  class->super = super;
-  class->name = class_name;
-  class->size = class_size;
-  class->instance_size = instance_size;
-  // inherit
-  size_t offset = offsetof(o_class_type, new);
-  if (class != &OObject) {
-    memcpy((char *) class + offset,
-           (char *) class->super + offset,
-           class->super->size - offset);
-  }
-}
-
-:end
 
 typedef uint8_t utf_t;
 
@@ -615,35 +574,47 @@ typedef enum {
   CINSTANCE, // 9  @ [a-zA-Z_][a-zA-Z_1-9]*
   CSELF,     //10  self
   CSUPER,    //11  super
-  CID,       //12  [a-zA-Z_][a-zA-Z_1-9]*
-  CLPARE,    //13  (
-  CRPARE,    //14  )
-  CQUOTE,    //15  "
-  CBSLASH,   //16  [back slash]
-  CBQUOTE,   //17  [back slash]"
-  CTERM,     //18  0x0A
-  CSUCALL,   //19  super call, eg. self->_.super->(self), used in parsing, not scan,
-  CSUMCALL,  //20  super method call, eg. super[middle dot]foo()
-  CSEMCALL,  //21  self method call, eg. [middle dot]foo()
-  CIDMCALL,  //22  id method call, eg. bar[middle dot]foo()
-  CSTMCALL,  //23  static id method call, eg. bar[low grave accent]foo()
-  CFREQUIRE, //24  require file name, eg. require "abc.c"
+  CSTATIC,   //12  static
+  CID,       //13  [a-zA-Z_][a-zA-Z_1-9]*
+  CLPARE,    //14  (
+  CRPARE,    //15  )
+  CLBRACE,   //16  {
+  CRBRACE,   //17  }
+  CQUOTE,    //18  "
+  CBSLASH,   //19  [back slash]
+  CBQUOTE,   //10  [back slash]"
+  CSLASH,    //21  /
+  CCATLINE,  //22  /0x0A
+  CMUL,      //23  *
+  CCOM,      //24  //
+  CCOMS_BEG, //25  /[mul]
+  CCOMS_END, //26  [mul]/
+  CNSIGN,    //27  #
+  CDECLEND,  //28  ;
+  CSPACE,    //29  [space]
+  CTERM,     //30  0x0A
+  CSUCALL,   //31  super call, eg. super(), used in parsing, not scan,
+  CSUMCALL,  //32  super method call, eg. super[middle dot]foo()
+  CSEMCALL,  //33  self method call, eg. [middle dot]foo()
+  CIDMCALL,  //34  id method call, eg. bar[middle dot]foo()
+  CSTMCALL,  //35  static id method call, eg. bar[low grave accent]foo()
+  CFREQUIRE, //36  require file name, eg. require "abc.c"
 
-  CLASS,     //25  class
-  EXTENDS,   //26  <
-  LBLOCK,    //27  {
-  RBLOCK,    //28  }
-  STRUCT,    //29  struct
-  METHODS,   //30  methods
-  TERM,      //31  [\r\n\s]+
+  CLASS,     //37  class
+  EXTENDS,   //38  <
+  LBLOCK,    //39  {
+  RBLOCK,    //40  }
+  STRUCT,    //41  struct
+  METHODS,   //42  methods
+  TERM,      //43  [\r\n\s]+
 
-  SELF,      //32  self
-  ID,        //33  [a-zA-Z_][a-zA-Z_1-9]*
-  METHOD,    //34  :
-  STAT,      //35  ;
-  TSELF,     //36  [middle dot]
-  TCLASS,    //37  [middle dot][middle dot]
-  OTHERS     //38  .*
+  SELF,      //44  self
+  ID,        //45  [a-zA-Z_][a-zA-Z_1-9]*
+  METHOD,    //46  :
+  STAT,      //47  ;
+  TSELF,     //48  [middle dot]
+  TCLASS,    //49  [middle dot][middle dot]
+  OTHERS     //50  .*
 } def_t;
 
 typedef struct {
@@ -713,12 +684,24 @@ typedef enum {
   CINSTANCE1, CINSTANCE2,
   CSELF1, CSELF2, CSELF3, CSELF4, CSELF5,
   CSUPER1, CSUPER2, CSUPER3, CSUPER4,
+  CSTATIC1, CSTATIC2, CSTATIC3, CSTATIC4, CSTATIC5,
   CID1,
   CLPARE1,
   CRPARE1,
+  CLBRACE1,
+  CRBRACE1,
   CQUOTE1,
   CBSLASH1, CBSLASH2,
+  CSLASH1,
+  CCATLINE1,
+  CMUL1,
+  CCOM1,
+  CCOMS_BEG1,
+  CCOMS_END1,
+  CNSIGN1,
+  CDECLEND1,
   CBQUOTE1,
+  CSPACE1,
   CTERM1,
 
   CLASS1, CLASS2, CLASS3, CLASS4, CLASS5,
@@ -857,7 +840,7 @@ static dfa_t dcself1[] = {
 
   UCMP('9'),
   UCMP('_'),
-  UPERIOD('f', 't'), // no s[u]per
+  UPERIOD('f', 's'), // no s[t]atic, s[u]per
   UPERIOD('v', 'z'),
 
   UPERIOD('0', '9'),
@@ -942,8 +925,15 @@ static next_t cstate_cstart = {
     NEXT_CHAR('s', CSELF1),
     NEXT_CHAR('(', CLPARE1),
     NEXT_CHAR(')', CRPARE1),
+    NEXT_CHAR('{', CLBRACE1),
+    NEXT_CHAR('}', CRBRACE1),
     NEXT_CHAR('"', CQUOTE1),
     NEXT_CHAR('\\', CBSLASH1),
+    NEXT_CHAR('/', CSLASH1),
+    NEXT_CHAR('*', CMUL1),
+    NEXT_CHAR('#', CNSIGN1),
+    NEXT_CHAR(';', CDECLEND1),
+    NEXT_CHAR(' ', CSPACE1),
     NEXT_CHAR(0x0A, CTERM1),
     NEXT_CHAR(MIDDLE_DOT, CCALL1),
     NEXT_CHAR(LOW_GRAVE_ACCENT, CSTCALL1), 0
@@ -1000,8 +990,8 @@ static next_t cstate_cclass[] = {
   NEXT_CMETHOD(CCLASS)
 };
 static next_t cstate_cend[] = {
-  NEXT_CKEYWORD('n', CEND1, dnot_n),
-  NEXT_CKEYWORD('d', CEND2, dnot_d),
+  NEXT_CKEYWORD('n', CEND2, dnot_n),
+  NEXT_CKEYWORD('d', CEND3, dnot_d),
   NEXT_CMETHOD(CEND)
 };
 static next_t cstate_cinstance1 = {
@@ -1014,9 +1004,10 @@ static next_t cstate_cinstance2 = {
 };
 static next_t cstate_cself1 = {
   (scmp_t[]) {
+    NEXT_STATE(dcself1, CID1),
     NEXT_CHAR('e', CSELF2),
-    NEXT_CHAR('u', CSUPER1),
-    NEXT_STATE(dcself1, CID1), 0
+    NEXT_CHAR('t', CSTATIC1),
+    NEXT_CHAR('u', CSUPER1), 0
   },
   FINISHED_STATE(OTHERS)
 };
@@ -1024,6 +1015,13 @@ static next_t cstate_cself2[] = {
   NEXT_CKEYWORD('l', CSELF3, dnot_l),
   NEXT_CKEYWORD('f', CSELF4, dnot_f),
   NEXT_CCHAR_END(CSELF)
+};
+static next_t cstate_cstatic[] = {
+  NEXT_CKEYWORD('a', CSTATIC2, dnot_a),
+  NEXT_CKEYWORD('t', CSTATIC3, dnot_t),
+  NEXT_CKEYWORD('i', CSTATIC4, dnot_i),
+  NEXT_CKEYWORD('c', CSTATIC5, dnot_c),
+  NEXT_CCHAR_END(CSTATIC)
 };
 static next_t cstate_csuper[] = {
   NEXT_CKEYWORD('p', CSUPER2, dnot_p),
@@ -1037,12 +1035,35 @@ static next_t cstate_cid = {
 };
 static next_t cstate_clpare = FINISHED_CHAR(CLPARE);
 static next_t cstate_crpare = FINISHED_CHAR(CRPARE);
+static next_t cstate_clbrace = FINISHED_CHAR(CLBRACE);
+static next_t cstate_crbrace = FINISHED_CHAR(CRBRACE);
 static next_t cstate_cquote = FINISHED_CHAR(CQUOTE);
 static next_t cstate_cbslash1 = {
-  NEXT_1CHAR('"', CBSLASH2),
+  (scmp_t[]) {
+    NEXT_CHAR('"', CBSLASH2),
+    NEXT_CHAR(0x0A, CCATLINE1), 0
+  },
   FINISHED_STATE(CBSLASH)
 };
 static next_t cstate_cbslash2 = FINISHED_CHAR(CBQUOTE);
+static next_t cstate_ccatline1 = FINISHED_CHAR(CCATLINE);
+static next_t cstate_cslash1 = {
+  (scmp_t[]) {
+    NEXT_CHAR('/', CCOM1),
+    NEXT_CHAR('*', CCOMS_BEG1), 0
+  },
+  FINISHED_STATE(CSLASH)
+};
+static next_t cstate_ccom = FINISHED_CHAR(CCOM);
+static next_t cstate_ccoms_beg = FINISHED_CHAR(CCOMS_BEG);
+static next_t cstate_cmul = {
+  NEXT_1CHAR('/', CCOMS_END1),
+  FINISHED_STATE(CMUL)
+};
+static next_t cstate_ccoms_end = FINISHED_CHAR(CCOMS_END);
+static next_t cstate_cnsign = FINISHED_CHAR(CNSIGN);
+static next_t cstate_cdeclend = FINISHED_CHAR(CDECLEND);
+static next_t cstate_cspace = FINISHED_CHAR(CSPACE);
 static next_t cstate_cterm = FINISHED_CHAR(CTERM);
 static next_t cstate_cothers = FINISHED_CHAR(OTHERS);
 
@@ -1080,6 +1101,11 @@ cscan_states(void) {
   states[CSELF2] = cstate_cself2[0];
   states[CSELF3] = cstate_cself2[1];
   states[CSELF4] = cstate_cself2[2];
+  states[CSTATIC1] = cstate_cstatic[0];
+  states[CSTATIC2] = cstate_cstatic[1];
+  states[CSTATIC3] = cstate_cstatic[2];
+  states[CSTATIC4] = cstate_cstatic[3];
+  states[CSTATIC5] = cstate_cstatic[4];
   states[CSUPER1] = cstate_csuper[0];
   states[CSUPER2] = cstate_csuper[1];
   states[CSUPER3] = cstate_csuper[2];
@@ -1087,9 +1113,20 @@ cscan_states(void) {
   states[CID1] = cstate_cid;
   states[CLPARE1] = cstate_clpare;
   states[CRPARE1] = cstate_crpare;
+  states[CLBRACE1] = cstate_clbrace;
+  states[CRBRACE1] = cstate_crbrace;
   states[CQUOTE1] = cstate_cquote;
   states[CBSLASH1] = cstate_cbslash1;
   states[CBSLASH2] = cstate_cbslash2;
+  states[CCATLINE1] = cstate_ccatline1;
+  states[CSLASH1] = cstate_cslash1;
+  states[CCOM1] = cstate_ccom;
+  states[CCOMS_BEG1] = cstate_ccoms_beg;
+  states[CMUL1] = cstate_cmul;
+  states[CCOMS_END1] = cstate_ccoms_end;
+  states[CNSIGN1] = cstate_cnsign;
+  states[CDECLEND1] = cstate_cdeclend;
+  states[CSPACE1] = cstate_cspace;
   states[CTERM1] = cstate_cterm;
   states[OTHERS1] = cstate_cothers;
   done = 1;
@@ -1539,11 +1576,14 @@ toks_cprint(src_t * src, ary_t * toks, size_t i, FILE * fsrc) {
     utf_t * cname = src->cname;
     tok_t * tok = tok_get(toks, i);
     def_t def = tok->def;
-    if (def == TSELF) {
+    if (def == TSELF ||
+        def == CTSELF) {
       fprintf(fsrc, "%s_t", cname);
-    } else if (def == TCLASS) {
+    } else if (def == TCLASS ||
+               def == CTCLASS) {
       fprintf(fsrc, "%s_class_t", cname);
-    } else if (def == SELF) {
+    } else if (def == SELF ||
+               def == CSELF) {
       fprintf(fsrc, "%s_t * ", cname);
       tok_print(tok, fsrc);
     } else {
@@ -1600,10 +1640,36 @@ cparse_raw(cclass_t * class, scan_t * scan, tok_t * tok) {
   }
 }
 
+tok_t *
+tok_cpy(tok_t * original) {
+  tok_t * new = calloc(1, sizeof(tok_t));
+  * new = * original;
+  return new;
+}
+
+tok_t *
+cal_add_cpy(src_t * src, tok_t * tok) {
+  tok_t * new = tok_cpy(tok);
+  cal_add(&src->toks, &new);
+  return new;
+}
+
+size_t
+cparse_terms(src_t * src, scan_t * scan, tok_t * tok) {
+  * tok = parse_next(scan);
+  size_t declend = src->toks.len;
+  while (parse_test(tok, CTERM)) {
+    cal_add_cpy(src, tok);
+    declend = src->toks.len;
+    * tok = parse_next(scan);
+  }
+  return declend;
+}
+
 #define STRLEN(str) lenof(str) - 1
 
-void
-cparse_def(cclass_t * class, src_t * src, scan_t * scan) {
+size_t
+cparse_def(cclass_t * class, src_t * src, scan_t * scan, tok_t * next) {
   scan->states = scan_states;
   parse_match(scan, TERM);
   src->class = parse_term(scan, ID);
@@ -1642,7 +1708,7 @@ cparse_def(cclass_t * class, src_t * src, scan_t * scan) {
   }
   scan->states = scan_states;
   parse_match(scan, TERM);
-  parse_term(scan, METHODS);
+  parse_term(scan, CLASS);
   parse_match(scan, LBLOCK);
   scan->states = scan_cstates;
   meth_t meth = {0};
@@ -1674,20 +1740,8 @@ cparse_def(cclass_t * class, src_t * src, scan_t * scan) {
   scan->states = scan_states;
   parse_match(scan, TERM);
   parse_match(scan, RBLOCK);
-}
-
-tok_t *
-tok_cpy(tok_t * original) {
-  tok_t * new = calloc(1, sizeof(tok_t));
-  * new = * original;
-  return new;
-}
-
-tok_t *
-cal_add_cpy(src_t * src, tok_t * tok) {
-  tok_t * new = tok_cpy(tok);
-  cal_add(&src->toks, &new);
-  return new;
+  scan->states = cscan_states;
+  return cparse_terms(src, scan, next);
 }
 
 void
@@ -1714,6 +1768,12 @@ cparse_call(src_t * src, scan_t * scan, tok_t * self) {
   } else if (parse_test(&next, CSTCALL)) {
     self->def = CSTMCALL;
     cal_add_two(src, self, &next);
+  } else if (parse_test(&next, CSPACE)) {
+    cal_add_cpy(src, self);
+    cal_add_cpy(src, &next);
+  } else if (parse_test(&next, CTERM)) {
+    cal_add_cpy(src, self);
+    cal_add_cpy(src, &next);
   } else {
     cal_add_cat(src, self, &next);
   }
@@ -1736,15 +1796,82 @@ cparse_scall(src_t * src, scan_t * scan, tok_t * self, tok_t * meth) {
 }
 
 void
-cparse_cmeth(src_t * src, scan_t * scan, tok_t * tok) {
+cparse_cmeth(src_t * src, scan_t * scan, tok_t * tok, size_t declend) {
   tok_t * new = cal_add_cpy(src, tok);
   imp_add(&src->imps, &new);
+  size_t paras = 0;
   * tok = parse_next(scan);
   if (parse_test(tok, CLPARE)) {
+    meth_t meth = {0};
+    tok_new(&meth.nm.name);
+    size_t len = src->toks.len;
+    size_t i = declend;
+    tok_t * arg = (tok_t *) cal_get(&src->toks, i);
+    if (parse_test(arg, CSTATIC)) {
+      i++;
+      tok_print(arg, stdout);
+      arg = (tok_t *) cal_get(&src->toks, i);
+      while (parse_test(arg, CSPACE)) {
+        i++;
+        tok_print(arg, stdout);
+        arg = (tok_t *) cal_get(&src->toks, i);
+      }
+    }
+    for (; i < len - 1; i++) {
+      tok_t * ret = (tok_t *) cal_get(&src->toks, i);
+      if (!parse_test(ret, CTERM)) {
+        tok_add(&meth.or.ret, ret);
+      }
+    }
+    cal_add_cpy(src, tok);
+    tok_new(&meth.or.arg);
+    tok_add(&meth.or.arg, tok);
+    paras++;
+    meth.or.name = * new;
+    while (1) {
+      * tok = parse_next(scan);
+      cal_add_cpy(src, tok);
+      if (parse_test(tok, CRPARE)) {
+        paras--;
+        if (paras == 0) {
+          tok_add(&meth.or.arg, tok);
+          meth_add(src, &meth);
+          break;
+        }
+      } else if (parse_test(tok, CLPARE)) {
+        paras++;
+      }
+      if (!parse_test(tok, CTERM)) {
+        tok_add(&meth.or.arg, tok);
+      }
+    }
+  } else {
+    cal_add_cpy(src, tok);
+  }
+}
+
+size_t
+cparse_com(src_t * src, scan_t * scan, tok_t * tok) {
+  cal_add_cpy(src, tok);
+  * tok = parse_next(scan);
+  while (!parse_test(tok, CTERM)) {
     cal_add_cpy(src, tok);
     * tok = parse_next(scan);
   }
   cal_add_cpy(src, tok);
+  return cparse_terms(src, scan, tok);
+}
+
+size_t
+cparse_coms(src_t * src, scan_t * scan, tok_t * tok) {
+  cal_add_cpy(src, tok);
+  * tok = parse_next(scan);
+  while (!parse_test(tok, CCOMS_END)) {
+    cal_add_cpy(src, tok);
+    * tok = parse_next(scan);
+  }
+  cal_add_cpy(src, tok);
+  return cparse_terms(src, scan, tok);
 }
 
 void
@@ -1752,16 +1879,13 @@ cparse_src(cclass_t * class, scan_t * scan, tok_t * tok) {
   if (!parse_test(tok, CCLASS)) return;
   src_t * src = calloc(1, sizeof(src_t));
   src_add(&class->srcs, &src);
-  cparse_def(class, src, scan);
-  imp_new(&src->imps, src->meths.len);
   cal_new(&src->toks);
-  scan->states = cscan_states;
-  * tok = parse_next(scan);
+  size_t declend = cparse_def(class, src, scan, tok);
+  imp_new(&src->imps, src->meths.len);
   tok_t meth = {0};
   while (!parse_test(tok, CCLASS) &&
          !scan->eof) {
     if (parse_test(tok, CEND)) {
-      puts("CEND !!!");
       * tok = parse_next(scan);
       break;
     } else if (parse_test(tok, CTCLASS)) {
@@ -1770,7 +1894,7 @@ cparse_src(cclass_t * class, scan_t * scan, tok_t * tok) {
       cal_add_cpy(src, tok);
     } else if (parse_test(tok, CMETHOD)) {
       meth = * tok;
-      cparse_cmeth(src, scan, tok);
+      cparse_cmeth(src, scan, tok, declend);
     } else if (parse_test(tok, CSELF)) {
       tok->def = CID;
       cal_add_cpy(src, tok);
@@ -1785,6 +1909,23 @@ cparse_src(cclass_t * class, scan_t * scan, tok_t * tok) {
       cal_add_cpy(src, tok);
     } else if (parse_test(tok, CLPARE)) {
       cal_add_cpy(src, tok);
+    } else if (parse_test(tok, CNSIGN)) {
+      declend = cparse_com(src, scan, tok);
+      continue;
+    } else if (parse_test(tok, CCOM)) {
+      declend = cparse_com(src, scan, tok);
+      continue;
+    } else if (parse_test(tok, CCOMS_BEG)) {
+      declend = cparse_coms(src, scan, tok);
+      continue;
+    } else if (parse_test(tok, CDECLEND)) {
+      cal_add_cpy(src, tok);
+      declend = cparse_terms(src, scan, tok);
+      continue;
+    } else if (parse_test(tok, CRBRACE)) {
+      cal_add_cpy(src, tok);
+      declend = cparse_terms(src, scan, tok);
+      continue;
     } else {
       cal_add_cpy(src, tok);
     }
@@ -2195,6 +2336,7 @@ class_pstructs(cclass_t * class, FILE * fsrc) {
         fprintf(fsrc, "  ");
         size_t i = tok_first_not_term(&meth->or.ret);
         toks_cprint(src, &meth->or.ret, i, fsrc);
+        fprintf(fsrc, " ");
         tok_ptail(name, fsrc);
         toks_cprint(src, &meth->or.arg, 0, fsrc);
         fprintf(fsrc, ";\n");
@@ -2346,9 +2488,14 @@ build_source(utf_t * fname, utf_t * string, size_t size, void * fnames) {
                                ext,   strlen(ext));
   printf("Generating %s ... ", fwname);
   FILE * fsrc = fopen(fwname, "w");
-  class_pstructs(class, fsrc);
   ary_t * srcs = &class->srcs;
   size_t i = 0;
+  for (; i < srcs->len; i++) {
+    src_t * src = src_get(srcs, i);
+    if (src->class.string) break;
+    class_praw(src, fsrc);
+  }
+  class_pstructs(class, fsrc);
   for (; i < srcs->len; i++) {
     src_t * src = src_get(srcs, i);
     if (src->class.string == NULL) {
@@ -2405,10 +2552,3 @@ main(int argc, utf_t ** argv) {
   }
   return 0;
 }
-
-void
-object_class_init(void) {
-  class_init(&Object, 0, "Object",
-    sizeof(object_class_t), sizeof(object_t));
-}
-

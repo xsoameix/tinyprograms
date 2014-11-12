@@ -7,13 +7,11 @@
     };
   }
 
-  methods {
-    · *    (* -new)       (void);
-    void   (* -init)      (self);
-    void   (* -delete)    (self);
-    ·· *   (* -klass)     (self);
-    char * (* -class_name)(self);
-    int    (* -is_a)      (self, ·· * class);
+  class {
+    ·· *   -super;
+    char * -name;
+    size_t -size;
+    size_t -instance_size;
   }
 }
 
