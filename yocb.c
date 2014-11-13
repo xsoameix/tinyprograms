@@ -1601,7 +1601,7 @@ toks_cprint(src_t * src, ary_t * toks, size_t i, FILE * fsrc) {
 
 void
 cparse_require(cclass_t * class, scan_t * scan, tok_t * tok) {
-  parse_match(scan, OTHERS);
+  parse_match(scan, CSPACE);
   parse_match(scan, CQUOTE);
   ary_t req = {0};
   utf_new(&req);
