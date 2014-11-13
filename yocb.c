@@ -2525,6 +2525,7 @@ build_source_start(utf_t * fname, utf_t * string, size_t size, void * unused) {
   h_table * fnames = h_init();
   cclass_t * class = build_source(fname, string, size, fnames);
   class_fclasses(class, fnames, fname);
+  return class;
 }
 
 typedef enum {
