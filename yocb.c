@@ -898,9 +898,12 @@ typedef struct next {
   }
 
 // CKEYWORD = C keyword
+// CMKEYWORD = C method keyword
 // NKEYWORD = not C keyword
 #define NEXT_CKEYWORD(c, next, not) \
   NEXT_KEYWORD(c, next, not, CID1)
+#define NEXT_CMKEYWORD(c, next, not) \
+  NEXT_KEYWORD(c, next, not, CMETHOD2)
 #define NEXT_NKEYWORD(c, next, not) \
   NEXT_KEYWORD(c, next, not, ID1)
 #define NEXT_CCHAR_END(def) \
@@ -974,24 +977,24 @@ static next_t cstate_cmethod2 = {
   FINISHED_STATE(CMETHOD)
 };
 static next_t cstate_crequire[] = {
-  NEXT_CKEYWORD('e', CREQUIRE2, dnot_e),
-  NEXT_CKEYWORD('q', CREQUIRE3, dnot_q),
-  NEXT_CKEYWORD('u', CREQUIRE4, dnot_u),
-  NEXT_CKEYWORD('i', CREQUIRE5, dnot_i),
-  NEXT_CKEYWORD('r', CREQUIRE6, dnot_r),
-  NEXT_CKEYWORD('e', CREQUIRE7, dnot_e),
+  NEXT_CMKEYWORD('e', CREQUIRE2, dnot_e),
+  NEXT_CMKEYWORD('q', CREQUIRE3, dnot_q),
+  NEXT_CMKEYWORD('u', CREQUIRE4, dnot_u),
+  NEXT_CMKEYWORD('i', CREQUIRE5, dnot_i),
+  NEXT_CMKEYWORD('r', CREQUIRE6, dnot_r),
+  NEXT_CMKEYWORD('e', CREQUIRE7, dnot_e),
   NEXT_CMETHOD(CREQUIRE)
 };
 static next_t cstate_cclass[] = {
-  NEXT_CKEYWORD('l', CCLASS2, dnot_l),
-  NEXT_CKEYWORD('a', CCLASS3, dnot_a),
-  NEXT_CKEYWORD('s', CCLASS4, dnot_s),
-  NEXT_CKEYWORD('s', CCLASS5, dnot_s),
+  NEXT_CMKEYWORD('l', CCLASS2, dnot_l),
+  NEXT_CMKEYWORD('a', CCLASS3, dnot_a),
+  NEXT_CMKEYWORD('s', CCLASS4, dnot_s),
+  NEXT_CMKEYWORD('s', CCLASS5, dnot_s),
   NEXT_CMETHOD(CCLASS)
 };
 static next_t cstate_cend[] = {
-  NEXT_CKEYWORD('n', CEND2, dnot_n),
-  NEXT_CKEYWORD('d', CEND3, dnot_d),
+  NEXT_CMKEYWORD('n', CEND2, dnot_n),
+  NEXT_CMKEYWORD('d', CEND3, dnot_d),
   NEXT_CMETHOD(CEND)
 };
 static next_t cstate_cinstance1 = {
