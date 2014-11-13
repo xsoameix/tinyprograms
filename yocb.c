@@ -129,7 +129,7 @@ h_rehash(h_table * table) {
       h_size_t pos = h_bin_pos(table, entry->hash);
       entry->next = table->bins[pos];
       table->bins[pos] = entry;
-      entry = entry->fore;
+      entry = entry->back;
     } while (entry != 0);
   }
 }
