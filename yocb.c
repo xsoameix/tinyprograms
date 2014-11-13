@@ -571,50 +571,51 @@ typedef enum {
   CCLASS,    // 6  : class
   CEND,      // 7  : end
   CMETHOD,   // 8  : [a-zA-Z_][a-zA-Z_1-9]*
-  CINSTANCE, // 9  @ [a-zA-Z_][a-zA-Z_1-9]*
-  CSELF,     //10  self
-  CSUPER,    //11  super
-  CSTATIC,   //12  static
-  CID,       //13  [a-zA-Z_][a-zA-Z_1-9]*
-  CLPARE,    //14  (
-  CRPARE,    //15  )
-  CLBRACE,   //16  {
-  CRBRACE,   //17  }
-  CQUOTE,    //18  "
-  CBSLASH,   //19  [back slash]
-  CBQUOTE,   //10  [back slash]"
-  CSLASH,    //21  /
-  CCATLINE,  //22  /0x0A
-  CMUL,      //23  *
-  CCOM,      //24  //
-  CCOMS_BEG, //25  /[mul]
-  CCOMS_END, //26  [mul]/
-  CNSIGN,    //27  #
-  CDECLEND,  //28  ;
-  CSPACE,    //29  [space]
-  CTERM,     //30  0x0A
-  CSUCALL,   //31  super call, eg. super(), used in parsing, not scan,
-  CSUMCALL,  //32  super method call, eg. super[middle dot]foo()
-  CSEMCALL,  //33  self method call, eg. [middle dot]foo()
-  CIDMCALL,  //34  id method call, eg. bar[middle dot]foo()
-  CSTMCALL,  //35  static id method call, eg. bar[low grave accent]foo()
-  CFREQUIRE, //36  require file name, eg. require "abc.c"
+  CDMETHOD,  // 9  : [a-zA-Z_][a-zA-Z_1-9]*
+  CINSTANCE, //10  @ [a-zA-Z_][a-zA-Z_1-9]*
+  CSELF,     //11  self
+  CSUPER,    //12  super
+  CSTATIC,   //13  static
+  CID,       //14  [a-zA-Z_][a-zA-Z_1-9]*
+  CLPARE,    //15  (
+  CRPARE,    //16  )
+  CLBRACE,   //17  {
+  CRBRACE,   //18  }
+  CQUOTE,    //19  "
+  CBSLASH,   //20  [back slash]
+  CBQUOTE,   //21  [back slash]"
+  CSLASH,    //22  /
+  CCATLINE,  //23  /0x0A
+  CMUL,      //24  *
+  CCOM,      //25  //
+  CCOMS_BEG, //26  /[mul]
+  CCOMS_END, //27  [mul]/
+  CNSIGN,    //28  #
+  CDECLEND,  //29  ;
+  CSPACE,    //30  [space]
+  CTERM,     //31  0x0A
+  CSUCALL,   //32  super call, eg. super(), used in parsing, not scan,
+  CSUMCALL,  //33  super method call, eg. super[middle dot]foo()
+  CSEMCALL,  //34  self method call, eg. [middle dot]foo()
+  CIDMCALL,  //35  id method call, eg. bar[middle dot]foo()
+  CSTMCALL,  //36  static id method call, eg. bar[low grave accent]foo()
+  CFREQUIRE, //37  require file name, eg. require "abc.c"
 
-  CLASS,     //37  class
-  EXTENDS,   //38  <
-  LBLOCK,    //39  {
-  RBLOCK,    //40  }
-  STRUCT,    //41  struct
-  METHODS,   //42  methods
-  TERM,      //43  [\r\n\s]+
+  CLASS,     //38  class
+  EXTENDS,   //39  <
+  LBLOCK,    //40  {
+  RBLOCK,    //41  }
+  STRUCT,    //42  struct
+  METHODS,   //43  methods
+  TERM,      //44  [\r\n\s]+
 
-  SELF,      //44  self
-  ID,        //45  [a-zA-Z_][a-zA-Z_1-9]*
-  METHOD,    //46  :
-  STAT,      //47  ;
-  TSELF,     //48  [middle dot]
-  TCLASS,    //49  [middle dot][middle dot]
-  OTHERS     //50  .*
+  SELF,      //45  self
+  ID,        //46  [a-zA-Z_][a-zA-Z_1-9]*
+  METHOD,    //47  :
+  STAT,      //48  ;
+  TSELF,     //49  [middle dot]
+  TCLASS,    //50  [middle dot][middle dot]
+  OTHERS     //51  .*
 } def_t;
 
 typedef struct {
@@ -1838,6 +1839,7 @@ cparse_cmeth(src_t * src, scan_t * scan, tok_t * tok, size_t declend) {
     tok_add(&meth.or.arg, tok);
     paras++;
     meth.or.name = * new;
+    meth.or.name.def = CDMETHOD;
     while (1) {
       * tok = parse_next(scan);
       cal_add_cpy(src, tok);
@@ -2346,8 +2348,13 @@ class_pstructs(cclass_t * class, FILE * fsrc) {
         fprintf(fsrc, "  ");
         size_t i = tok_first_not_term(&meth->or.ret);
         toks_cprint(src, &meth->or.ret, i, fsrc);
-        fprintf(fsrc, " ");
-        tok_ptail(name, fsrc);
+        if (name->def == CDMETHOD) {
+          fprintf(fsrc, " (* ");
+          tok_ptail(name, fsrc);
+          fprintf(fsrc, ")");
+        } else {
+          tok_ptail(name, fsrc);
+        }
         toks_cprint(src, &meth->or.arg, 0, fsrc);
         fprintf(fsrc, ";\n");
       }
