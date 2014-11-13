@@ -2288,9 +2288,9 @@ class_pmeth(src_t * src, FILE * fsrc) {
     fprintf(fsrc, ", 0");
   } else {
     fprintf(fsrc, "  %s_class_init();\n", sname);
-    fprintf(fsrc, "  o_init_class((Object *) &");
+    fprintf(fsrc, "  class_init((object_class_t *) &");
     tok_print(class, fsrc);
-    fprintf(fsrc, ", (Object *) &");
+    fprintf(fsrc, ", (object_class_t *) &");
     tok_print(super, fsrc);
   }
   fprintf(fsrc, ", \"");
