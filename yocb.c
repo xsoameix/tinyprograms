@@ -570,52 +570,58 @@ typedef enum {
   CREQUIRE,  // 5  : require
   CCLASS,    // 6  : class
   CEND,      // 7  : end
-  CMETHOD,   // 8  : [a-zA-Z_][a-zA-Z_1-9]*
-  CDMETHOD,  // 9  : [a-zA-Z_][a-zA-Z_1-9]*
-  CINSTANCE, //10  @ [a-zA-Z_][a-zA-Z_1-9]*
-  CSELF,     //11  self
-  CSUPER,    //12  super
-  CSTATIC,   //13  static
-  CID,       //14  [a-zA-Z_][a-zA-Z_1-9]*
-  CLPARE,    //15  (
-  CRPARE,    //16  )
-  CLBRACE,   //17  {
-  CRBRACE,   //18  }
-  CQUOTE,    //19  "
-  CBSLASH,   //20  [back slash]
-  CBQUOTE,   //21  [back slash]"
-  CSLASH,    //22  /
-  CCATLINE,  //23  /0x0A
-  CMUL,      //24  *
-  CCOM,      //25  //
-  CCOMS_BEG, //26  /[mul]
-  CCOMS_END, //27  [mul]/
-  CNSIGN,    //28  #
-  CDECLEND,  //29  ;
-  CSPACE,    //30  [space]
-  CTERM,     //31  0x0A
-  CSUCALL,   //32  super call, eg. super(), used in parsing, not scan,
-  CSUMCALL,  //33  super method call, eg. super[middle dot]foo()
-  CSEMCALL,  //34  self method call, eg. [middle dot]foo()
-  CIDMCALL,  //35  id method call, eg. bar[middle dot]foo()
-  CSTMCALL,  //36  static id method call, eg. bar[low grave accent]foo()
-  CFREQUIRE, //37  require file name, eg. require "abc.c"
+  CTYPEDEF,  // 8  : end
+  CMETHOD,   // 9  : [a-zA-Z_][a-zA-Z_1-9]*
+  CDMETHOD,  //10  : [a-zA-Z_][a-zA-Z_1-9]*
+  CINSTANCE, //11  @ [a-zA-Z_][a-zA-Z_1-9]*
+  CSELF,     //12  self
+  CSUPER,    //13  super
+  CSTATIC,   //14  static
+  CID,       //15  [a-zA-Z_][a-zA-Z_1-9]*
+  CLPARE,    //16  (
+  CRPARE,    //17  )
+  CLBRACE,   //18  {
+  CRBRACE,   //19  }
+  CQUOTE,    //20  "
+  CBSLASH,   //21  [back slash]
+  CBQUOTE,   //22  [back slash]"
+  CSLASH,    //23  /
+  CCATLINE,  //24  /0x0A
+  CMUL,      //25  *
+  CCOM,      //26  //
+  CCOMS_BEG, //27  /[mul]
+  CCOMS_END, //28  [mul]/
+  CNSIGN,    //29  #
+  CDECLEND,  //30  ;
+  CSPACE,    //31  [space]
+  CTERM,     //32  0x0A
+  CSUCALL,   //33  super call, eg. super(), used in parsing, not scan,
+  CSUMCALL,  //34  super method call, eg. super[middle dot]foo()
+  CSEMCALL,  //35  self method call, eg. [middle dot]foo()
+  CIDMCALL,  //36  id method call, eg. bar[middle dot]foo()
+  CSTMCALL,  //37  static id method call, eg. bar[low grave accent]foo()
+  CFREQUIRE, //38  require file name, eg. require "abc.c"
+  CCMETHOD,  //39  class method, eg. void : abc(int x) { }
+  CSUCCALL,  //40  super class call, eg. void : abc(int x) { super(x) }
+  CSUCMCALL, //41  super class method call, eg.
+             //      void : foo(int x) { }
+             //      void : bar(int x, int y) { super[middle dot]foo(x) }
 
-  CLASS,     //38  class
-  EXTENDS,   //39  <
-  LBLOCK,    //40  {
-  RBLOCK,    //41  }
-  STRUCT,    //42  struct
-  METHODS,   //43  methods
-  TERM,      //44  [\r\n\s]+
+  CLASS,     //42  class
+  EXTENDS,   //43  <
+  LBLOCK,    //44  {
+  RBLOCK,    //45  }
+  STRUCT,    //46  struct
+  METHODS,   //47  methods
+  TERM,      //48  [\r\n\s]+
 
-  SELF,      //45  self
-  ID,        //46  [a-zA-Z_][a-zA-Z_1-9]*
-  METHOD,    //47  :
-  STAT,      //48  ;
-  TSELF,     //49  [middle dot]
-  TCLASS,    //50  [middle dot][middle dot]
-  OTHERS     //51  .*
+  SELF,      //49  self
+  ID,        //50  [a-zA-Z_][a-zA-Z_1-9]*
+  METHOD,    //51  :
+  STAT,      //52  ;
+  TSELF,     //53  [middle dot]
+  TCLASS,    //54  [middle dot][middle dot]
+  OTHERS     //55  .*
 } def_t;
 
 typedef struct {
@@ -681,6 +687,7 @@ typedef enum {
   CREQUIRE1, CREQUIRE2, CREQUIRE3, CREQUIRE4, CREQUIRE5, CREQUIRE6, CREQUIRE7,
   CCLASS1, CCLASS2, CCLASS3, CCLASS4, CCLASS5,
   CEND1, CEND2, CEND3,
+  CTYPEDEF1, CTYPEDEF2, CTYPEDEF3, CTYPEDEF4, CTYPEDEF5, CTYPEDEF6, CTYPEDEF7,
   CMETHOD1, CMETHOD2,
   CINSTANCE1, CINSTANCE2,
   CSELF1, CSELF2, CSELF3, CSELF4, CSELF5,
@@ -763,17 +770,19 @@ static dfa_t cmethod[] = {
   UCMP('d'),
 
   UCMP('_'),
-  UCMP('q'),
+  UCMP('s'),
 
   UCMP('Z'),
   UCMP('b'),
-  UPERIOD('f', 'q'), // no [r]equire
-  UPERIOD('s', 'z'),
+  UCMP('q'),
+  UPERIOD('u', 'z'),
 
   UPERIOD('A', 'Z'),
   UPERIOD('_', '_'),
   UPERIOD('a', 'b'), // no [c]class
-  UPERIOD('d', 'd')  // no [e]nd
+  UPERIOD('d', 'd'), // no [e]nd
+  UPERIOD('f', 'q'), // no [r]equire
+  UPERIOD('s', 's')  // no [t]ypedef
 };
 
 static dfa_t did_head[] = {
@@ -853,6 +862,7 @@ static dfa_t dnot_f[] = UNOT('f');
 static dfa_t dnot_p[] = UNOT('p');
 static dfa_t dnot_q[] = UNOT('q');
 static dfa_t dnot_i[] = UNOT('i');
+static dfa_t dnot_y[] = UNOT('y');
 
 static dfa_t dterm1[] = {
   UCMP(0x0D),
@@ -969,6 +979,7 @@ static next_t cstate_cmethod1 = {
     NEXT_CHAR('r', CREQUIRE1),
     NEXT_CHAR('c', CCLASS1),
     NEXT_CHAR('e', CEND1),
+    NEXT_CHAR('t', CTYPEDEF1),
     NEXT_STATE(cmethod, CMETHOD2), 0
   },
   FINISHED_STATE(OTHERS)
@@ -997,6 +1008,15 @@ static next_t cstate_cend[] = {
   NEXT_CMKEYWORD('n', CEND2, dnot_n),
   NEXT_CMKEYWORD('d', CEND3, dnot_d),
   NEXT_CMETHOD(CEND)
+};
+static next_t cstate_ctypedef[] = {
+  NEXT_CMKEYWORD('y', CTYPEDEF2, dnot_y),
+  NEXT_CMKEYWORD('p', CTYPEDEF3, dnot_p),
+  NEXT_CMKEYWORD('e', CTYPEDEF4, dnot_e),
+  NEXT_CMKEYWORD('d', CTYPEDEF5, dnot_d),
+  NEXT_CMKEYWORD('e', CTYPEDEF6, dnot_e),
+  NEXT_CMKEYWORD('f', CTYPEDEF7, dnot_f),
+  NEXT_CMETHOD(CTYPEDEF)
 };
 static next_t cstate_cinstance1 = {
   NEXT_1STATE(ccall, CINSTANCE2),
@@ -1099,6 +1119,13 @@ cscan_states(void) {
   states[CEND1] = cstate_cend[0];
   states[CEND2] = cstate_cend[1];
   states[CEND3] = cstate_cend[2];
+  states[CTYPEDEF1] = cstate_ctypedef[0];
+  states[CTYPEDEF2] = cstate_ctypedef[1];
+  states[CTYPEDEF3] = cstate_ctypedef[2];
+  states[CTYPEDEF4] = cstate_ctypedef[3];
+  states[CTYPEDEF5] = cstate_ctypedef[4];
+  states[CTYPEDEF6] = cstate_ctypedef[5];
+  states[CTYPEDEF7] = cstate_ctypedef[6];
   states[CINSTANCE1] = cstate_cinstance1;
   states[CINSTANCE2] = cstate_cinstance2;
   states[CSELF1] = cstate_cself1;
@@ -1408,21 +1435,23 @@ typedef struct {
 } cal_t; // cal = call
 
 typedef struct {
-  ary_t toks;  // union
-  tok_t class; // union
-  tok_t super; // allocated only when in class block
+  ary_t toks;    // union
+  tok_t class;   // union
+  tok_t super;   // allocated only when in class block
   ary_t strukt;
   ary_t meths;
-  ary_t imps;  // implementation
+  ary_t imps;    // methods implementation
+  ary_t typs;    // typedefs
   utf_t * cname; // class name
   utf_t * sname; // super name
 } src_t;
 
 typedef struct {
-  utf_t * string; // file string
-  ary_t reqs; // require
-  ary_t srcs; // sources
+  utf_t * string;     // file string
+  ary_t reqs;         // require
+  ary_t srcs;         // sources
   h_table * classes;
+  h_table * rclasses; // require classes
 } cclass_t;
 
 void
@@ -1797,11 +1826,19 @@ void
 cparse_scall(src_t * src, scan_t * scan, tok_t * self, tok_t * meth) {
   tok_t next = parse_next(scan);
   if (parse_test(&next, CCALL)) {
-    self->def = CSUMCALL;
+    if (meth->def == CCMETHOD) {
+      self->def = CSUCMCALL;
+    } else {
+      self->def = CSUMCALL;
+    }
     cal_add_two(src, self, &next);
   } else if (parse_test(&next, CLPARE)) {
     * self = * meth;
-    self->def = CSUCALL;
+    if (meth->def == CCMETHOD) {
+      self->def = CSUCCALL;
+    } else {
+      self->def = CSUCALL;
+    }
     cal_add_cpy(src, self);
     cal_add_cpy(src, &next);
   } else {
@@ -1809,8 +1846,9 @@ cparse_scall(src_t * src, scan_t * scan, tok_t * self, tok_t * meth) {
   }
 }
 
-void
+def_t
 cparse_cmeth(src_t * src, scan_t * scan, tok_t * tok, size_t declend) {
+  def_t def = CMETHOD;
   tok_t * new = cal_add_cpy(src, tok);
   imp_add(&src->imps, &new);
   size_t paras = 0;
@@ -1841,6 +1879,14 @@ cparse_cmeth(src_t * src, scan_t * scan, tok_t * tok, size_t declend) {
     paras++;
     meth.or.name = * new;
     meth.or.name.def = CDMETHOD;
+    * tok = parse_next(scan);
+    if (tok->def != CSELF) {
+      def = CCMETHOD;
+    }
+    cal_add_cpy(src, tok);
+    if (!parse_test(tok, CTERM)) {
+      tok_add(&meth.or.arg, tok);
+    }
     while (1) {
       * tok = parse_next(scan);
       cal_add_cpy(src, tok);
@@ -1861,6 +1907,7 @@ cparse_cmeth(src_t * src, scan_t * scan, tok_t * tok, size_t declend) {
   } else {
     cal_add_cpy(src, tok);
   }
+  return def;
 }
 
 size_t
@@ -1888,11 +1935,29 @@ cparse_coms(src_t * src, scan_t * scan, tok_t * tok) {
 }
 
 void
+cparse_typedef(src_t * src, scan_t * scan, tok_t * tok) {
+  tok_t first = * tok;
+  * tok = parse_next(scan);
+  while (!parse_test(tok, CDECLEND)) {
+    first.len += tok->len;
+    * tok = parse_next(scan);
+  }
+  first.len += tok->len;
+  ary_t * typs = &src->typs;
+  tok_add(typs, &first);
+  * tok = parse_next(scan);
+  while (parse_test(tok, CTERM)) {
+    * tok = parse_next(scan);
+  }
+}
+
+void
 cparse_src(cclass_t * class, scan_t * scan, tok_t * tok) {
   if (!parse_test(tok, CCLASS)) return;
   src_t * src = calloc(1, sizeof(src_t));
   src_add(&class->srcs, &src);
   cal_new(&src->toks);
+  tok_new(&src->typs);
   size_t declend = cparse_def(class, src, scan, tok);
   imp_new(&src->imps, src->meths.len);
   tok_t meth = {0};
@@ -1905,9 +1970,12 @@ cparse_src(cclass_t * class, scan_t * scan, tok_t * tok) {
       cal_add_cpy(src, tok);
     } else if (parse_test(tok, CTSELF)) {
       cal_add_cpy(src, tok);
+    } else if (parse_test(tok, CTYPEDEF)) {
+      cparse_typedef(src, scan, tok);
+      continue;
     } else if (parse_test(tok, CMETHOD)) {
       meth = * tok;
-      cparse_cmeth(src, scan, tok, declend);
+      meth.def = cparse_cmeth(src, scan, tok, declend);
     } else if (parse_test(tok, CSELF)) {
       tok->def = CID;
       cal_add_cpy(src, tok);
@@ -2173,13 +2241,6 @@ class_cmeths(cclass_t * class, src_t * src) {
 }
 
 void
-class_pclass(src_t * src, FILE * fsrc) {
-  fprintf(fsrc, "%s_class_t ", src->cname);
-  tok_print(&src->class, fsrc);
-  fprintf(fsrc, ";\n\n");
-}
-
-void
 class_praw(src_t * src, FILE * fsrc) {
   ary_t * toks = &src->toks;
   size_t i = 0;
@@ -2201,6 +2262,16 @@ class_parg(cal_t * tok, cal_t * next, size_t * i, FILE * fsrc) {
   }
 }
 
+// print class method arguments (without first 'self' argument)
+void
+class_pcarg(cal_t * tok, size_t * i, FILE * fsrc) {
+  if (tok->self.def == CLPARE) {
+    * i += 1;
+  } else {
+    fprintf(fsrc, ")");
+  }
+}
+
 void
 class_psrc(src_t * src, FILE * fsrc) {
   ary_t * toks = &src->toks;
@@ -2210,6 +2281,7 @@ class_psrc(src_t * src, FILE * fsrc) {
     def_t def = tok->self.def;
     if (def != CTERM) break;
   }
+  tok_t * class = &src->class;
   utf_t * cname = src->cname;
   for (; i < toks->len; i++) {
     cal_t * tok = cal_get(toks, i);
@@ -2231,15 +2303,27 @@ class_psrc(src_t * src, FILE * fsrc) {
       fprintf(fsrc, "self->");
       cal_ptail(tok, fsrc);
     } else if (def == CSUCALL) {
-      fprintf(fsrc, "self->_.super->");
+      fprintf(fsrc, "self->_.super()->");
       cal_ptail(tok, fsrc);
       fprintf(fsrc, "(self");
       class_parg(next, nnxt, &i, fsrc);
+    } else if (def == CSUCCALL) {
+      tok_print(class, fsrc);
+      fprintf(fsrc, ".super(0)->");
+      cal_ptail(tok, fsrc);
+      fprintf(fsrc, "(");
+      class_pcarg(next, &i, fsrc);
     } else if (def == CSUMCALL) {
-      fprintf(fsrc, "self->_.super->");
+      fprintf(fsrc, "self->_.super()->");
       tok_ptail(name, fsrc);
       fprintf(fsrc, "(self");
       class_parg(next, nnxt, &i, fsrc);
+    } else if (def == CSUCMCALL) {
+      tok_print(class, fsrc);
+      fprintf(fsrc, ".super(0)->");
+      tok_ptail(name, fsrc);
+      fprintf(fsrc, "(");
+      class_pcarg(next, &i, fsrc);
     } else if (def == CSEMCALL) {
       fprintf(fsrc, "self->_->");
       cal_ptail(tok, fsrc);
@@ -2256,7 +2340,7 @@ class_psrc(src_t * src, FILE * fsrc) {
       cal_print(tok, fsrc);
       fprintf(fsrc, "._->");
       tok_ptail(name, fsrc);
-      fprintf(fsrc, "(");
+      fprintf(fsrc, "(&");
       cal_print(tok, fsrc);
       class_parg(next, nnxt, &i, fsrc);
     } else {
@@ -2266,62 +2350,14 @@ class_psrc(src_t * src, FILE * fsrc) {
 }
 
 void
-class_pmeth(src_t * src, FILE * fsrc) {
-  ary_t * toks = &src->toks;
-  size_t len = toks->len;
-  if (len >= 2) len = 2;
+class_ptyps(src_t * src, FILE * fsrc) {
+  ary_t * typs = &src->typs;
   size_t i = 0;
-  for (; i < len; i++) {
-    size_t reverse = toks->len - i - 1;
-    cal_t * tok = cal_get(toks, reverse);
-    def_t def = tok->self.def;
-    if (def != CTERM) fprintf(fsrc, "\n\n");
-  }
-  utf_t * cname = src->cname;
-  utf_t * sname = src->sname;
-  tok_t * class = &src->class;
-  tok_t * super = &src->super;
-  fprintf(fsrc, "void\n");
-  fprintf(fsrc, "%s_class_init(void) {\n", cname);
-  if (src->super.string == NULL) {
-    fprintf(fsrc, "  class_init(&");
-    tok_print(class, fsrc);
-    fprintf(fsrc, ", 0");
-  } else {
-    fprintf(fsrc, "  %s_class_init();\n", sname);
-    fprintf(fsrc, "  class_init((object_class_t *) &");
-    tok_print(class, fsrc);
-    fprintf(fsrc, ", (object_class_t *) &");
-    tok_print(super, fsrc);
-  }
-  fprintf(fsrc, ", \"");
-  tok_print(class, fsrc);
-  fprintf(fsrc, "\",\n");
-  fprintf(fsrc, "    sizeof(%s_class_t), sizeof(%s_t));\n", cname, cname);
-  ary_t * imps = &src->imps;
-  i = 0;
-  for (; i < imps->len; i++) {
-    tok_t * tok = imp_get(imps, i);
-    fprintf(fsrc, "  ");
-    tok_print(class, fsrc);
-    fprintf(fsrc, ".");
+  for (; i < typs->len; i++) {
+    tok_t * tok = tok_get(typs, i);
     tok_ptail(tok, fsrc);
-    fprintf(fsrc, " = %s_method_", cname);
-    tok_ptail(tok, fsrc);
-    fprintf(fsrc, ";\n");
+    fprintf(fsrc, "\n");
   }
-  fprintf(fsrc, "}\n\n");
-}
-
-
-fread_t build_source;
-
-void
-class_pbase(cclass_t * class, FILE * fsrc) {
-  fprintf(fsrc, "typedef struct object_class {\n");
-  fprintf(fsrc, "  struct object_class * super;\n");
-  fprintf(fsrc, "  char * name;\n");
-  fprintf(fsrc, "} object_class_t;\n\n");
 }
 
 void
@@ -2336,14 +2372,134 @@ class_pstruct(src_t * src, src_t * base, h_table * classes, FILE * fsrc) {
 }
 
 void
+class_pbases(cclass_t * class, FILE * fsrc) {
+  fprintf(fsrc, "struct object;\n");
+  fprintf(fsrc, "typedef struct object_class {\n");
+  fprintf(fsrc, "  char * name;\n");
+  fprintf(fsrc, "  struct object_class * (* super)(struct object *);\n");
+  fprintf(fsrc, "} object_class_t;\n\n");
+  h_table * rclasses = class->rclasses;
+  h_entry * entry = rclasses->head;
+  while (entry) {
+    src_t * src = (src_t *) entry->val;
+    utf_t * cname = src->cname;
+    fprintf(fsrc, "typedef struct %s_class %s_class_t;\n", cname, cname);
+    fprintf(fsrc, "typedef struct %s %s_t;\n", cname, cname);
+    entry = entry->back;
+  }
+  entry = rclasses->head;
+  while (entry) {
+    src_t * src = (src_t *) entry->val;
+    utf_t * cname = src->cname;
+    utf_t * sname = src->sname;
+    h_table * meths = class_cmeths(class, src);
+    h_entry * mentry = meths->head;
+    class_ptyps(src, fsrc);
+    fprintf(fsrc, "\nstruct %s_class {\n", cname);
+    fprintf(fsrc, "  char * name;\n");
+    fprintf(fsrc, "  %s_class_t * (* super)(%s_t *);\n", sname, cname);
+    while (mentry) {
+      meth_t * meth = (meth_t *) mentry->val;
+      tok_t * name = &meth->or.name;
+      if (name->string != NULL) {
+        fprintf(fsrc, "  ");
+        size_t i = tok_first_not_term(&meth->or.ret);
+        toks_cprint(src, &meth->or.ret, i, fsrc);
+        if (name->def == CDMETHOD) {
+          fprintf(fsrc, " (* ");
+          tok_ptail(name, fsrc);
+          fprintf(fsrc, ")");
+        } else {
+          tok_ptail(name, fsrc);
+        }
+        toks_cprint(src, &meth->or.arg, 0, fsrc);
+        fprintf(fsrc, ";\n");
+      }
+      mentry = mentry->back;
+    }
+    fprintf(fsrc, "};\n\n");
+    fprintf(fsrc, "  struct %s {\n", cname);
+    fprintf(fsrc, "    union {\n");
+    fprintf(fsrc, "      %s_class_t * class;\n", cname);
+    fprintf(fsrc, "      %s_class_t * _;\n", cname);
+    fprintf(fsrc, "    };");
+    class_pstruct(src, src, class->classes, fsrc);
+    fprintf(fsrc, "};\n\n");
+    mentry = meths->head;
+    while (mentry) {
+      meth_t * meth = (meth_t *) mentry->val;
+      tok_t * name = &meth->or.name;
+      if (name->string != NULL) {
+        size_t i = tok_first_not_term(&meth->or.ret);
+        toks_cprint(src, &meth->or.ret, i, fsrc);
+        fprintf(fsrc, " %s_method_", cname);
+        tok_ptail(name, fsrc);
+        toks_cprint(src, &meth->or.arg, 0, fsrc);
+        fprintf(fsrc, ";\n");
+      }
+      mentry = mentry->back;
+    }
+    h_free(meths);
+    entry = entry->back;
+  }
+  entry = rclasses->head;
+  while (entry) {
+    src_t * src = (src_t *) entry->val;
+    utf_t * cname = src->cname;
+    fprintf(fsrc, "extern %s_class_t ", cname);
+    tok_print(&src->class, fsrc);
+    fprintf(fsrc, ";\n");
+    entry = entry->back;
+  }
+  fprintf(fsrc, "\n");
+}
+
+void
+class_crcmeths(cclass_t * class, src_t * src, h_size_t meths_len, FILE * fsrc) {
+  src_t * child = src;
+  h_table * meths = h_init();
+  size_t mi = 0;
+  while (1) {
+    tok_t * super = &src->super;
+    utf_t * cname = src->cname;
+    ary_t * imps = &src->imps;
+    size_t i = 0;
+    for (; i < imps->len; i++) {
+      tok_t * tok = imp_get(imps, i);
+      if (h_contains(meths, tok->string, tok->len)) continue;
+      h_insert(meths, tok->string, tok->len, 0);
+      fprintf(fsrc, "  .");
+      tok_ptail(tok, fsrc);
+      if (src == child) {
+        fprintf(fsrc, " = &%s_method_", cname);
+        tok_ptail(tok, fsrc);
+      } else {
+        fprintf(fsrc, " = (void *) &%s_method_", cname);
+        tok_ptail(tok, fsrc);
+      }
+      if (mi != meths_len - 1) {
+        fprintf(fsrc, ",");
+      }
+      fprintf(fsrc, "\n");
+      mi++;
+    }
+    h_table * classes = class->classes;
+    int get = h_get(classes, super->string, super->len, (h_data_t *) &src);
+    if (!get) break;
+  }
+  h_free(meths);
+}
+
+void
 class_pstructs(cclass_t * class, src_t * src, FILE * fsrc) {
   utf_t * cname = src->cname;
   utf_t * sname = src->sname;
   fprintf(fsrc, "typedef struct %s_class %s_class_t;\n", cname, cname);
-  fprintf(fsrc, "typedef struct %s %s_t;\n\n", cname, cname);
-  fprintf(fsrc, "struct %s_class {\n", cname);
-  fprintf(fsrc, "  %s_class_t * super;\n", sname);
+  fprintf(fsrc, "typedef struct %s %s_t;\n", cname, cname);
+  class_ptyps(src, fsrc);
+  fprintf(fsrc, "\nstruct %s_class {\n", cname);
   fprintf(fsrc, "  char * name;\n");
+  fprintf(fsrc, "  %s_class_t * (* super)(%s_t *);\n", sname, cname);
   h_table * meths = class_cmeths(class, src);
   h_entry * entry = meths->head;
   while (entry) {
@@ -2388,30 +2544,23 @@ class_pstructs(cclass_t * class, src_t * src, FILE * fsrc) {
     }
     entry = entry->back;
   }
-  h_free(meths);
-  fprintf(fsrc, "\n%s_class_t ", cname);
-  tok_print(&src->class, fsrc);
-  fprintf(fsrc, " = {\n  ");
+  fprintf(fsrc, "\n%s_class_t *\n", sname);
+  fprintf(fsrc, "%s_method_super(%s_t * self) {\n", cname, cname);
   if (src->super.string == basename) {
-    fprintf(fsrc, "0");
+    fprintf(fsrc, "  return 0;\n}\n\n");
   } else {
+    fprintf(fsrc, "  return &");
     tok_print(&src->super, fsrc);
+    fprintf(fsrc, ";\n}\n\n");
   }
-  fprintf(fsrc, ",\n  \"");
+  fprintf(fsrc, "%s_class_t ", cname);
   tok_print(&src->class, fsrc);
-  fprintf(fsrc, "\",\n");
-  ary_t * imps = &src->imps;
-  size_t i = 0;
-  for (; i < imps->len; i++) {
-    tok_t * tok = imp_get(imps, i);
-    fprintf(fsrc, "  &%s_method_", cname);
-    tok_ptail(tok, fsrc);
-    if (i != imps->len - 1) {
-      fprintf(fsrc, ",");
-    }
-    fprintf(fsrc, "\n");
-  }
+  fprintf(fsrc, " = {\n  .name = \"");
+  tok_print(&src->class, fsrc);
+  fprintf(fsrc, "\",\n  .super = &%s_method_super,\n", cname);
+  class_crcmeths(class, src, meths->len, fsrc);
   fprintf(fsrc, "};\n\n");
+  h_free(meths);
 }
 
 void
@@ -2465,10 +2614,15 @@ class_fimps(src_t * src) {
 }
 
 void
+class_ftyps(src_t * src) {
+  ary_free(&src->typs);
+}
+
+void
 class_fsrc(src_t * src) {
   if (src->class.string) {
     class_fimps(src);
-    free(src->sname);
+    class_ftyps(src);
   } else {
     free(src);
   }
@@ -2501,10 +2655,12 @@ class_fclasses(cclass_t * class, h_table * fnames, utf_t * fname) {
     class_fstruct(src);
     class_fmeths(src);
     free(src->cname);
+    free(src->sname);
     free(src);
     entry = entry->back;
   }
   h_free(classes);
+  h_free(class->rclasses);
   entry = fnames->head;
   while (entry) {
     utf_t * name = entry->key;
@@ -2517,8 +2673,12 @@ class_fclasses(cclass_t * class, h_table * fnames, utf_t * fname) {
   h_free(fnames);
 }
 
+fread_t build_source;
+
 void
 class_require(cclass_t * class, utf_t * fname, h_table * fnames) {
+  class->rclasses = h_init();
+  h_table * rclasses = class->rclasses;
   h_table * classes = class->classes;
   ary_t * reqs = &class->reqs;
   size_t i = 0;
@@ -2532,9 +2692,10 @@ class_require(cclass_t * class, utf_t * fname, h_table * fnames) {
       class = file_read(1, fname, build_source, fnames);
     }
     h_table * cclasses = class->classes;
-    h_merge(classes, cclasses);
+    h_merge(rclasses, cclasses);
     h_free(cclasses);
   }
+  h_merge(classes, rclasses);
 }
 
 void *
@@ -2548,7 +2709,7 @@ build_source(utf_t * fname, utf_t * string, size_t size, void * fnames) {
                                ext,   strlen(ext));
   printf("Generating %s ... ", fwname);
   FILE * fsrc = fopen(fwname, "w");
-  class_pbase(class, fsrc);
+  class_pbases(class, fsrc);
   ary_t * srcs = &class->srcs;
   size_t i = 0;
   for (; i < srcs->len; i++) {
