@@ -1675,6 +1675,9 @@ cparse_terms(src_t * src, scan_t * scan, tok_t * tok) {
 
 #define STRLEN(str) lenof(str) - 1
 
+static utf_t basename[] = "Object";
+static tok_t baseclass = {ID, STRLEN(basename), basename};
+
 size_t
 cparse_def(cclass_t * class, src_t * src, scan_t * scan, tok_t * next) {
   scan->states = scan_states;
@@ -1687,11 +1690,9 @@ cparse_def(cclass_t * class, src_t * src, scan_t * scan, tok_t * next) {
     parse_term(scan, LBLOCK);
   } else {
     tok_t * cls = &src->class;
-    static utf_t basename[] = "Object";
-    static tok_t base = {ID, STRLEN(basename), basename};
     if (cls->len != STRLEN(basename) ||
         memcmp(cls->string, basename, STRLEN(basename)) != 0) {
-      src->super = base;
+      src->super = baseclass;
     }
     parse_check(&tok, LBLOCK);
     parse_match(scan, TERM);
@@ -2146,7 +2147,7 @@ class_crmeths(cclass_t * class, src_t * src, h_table * meths) {
   src_t * superclass = 0;
   int get = h_get(class->classes, super->string, super->len,
                   (h_data_t *) &superclass);
-  if (!get && super->string) {
+  if (!get && super->string != basename) {
     printf("Please require ");
     tok_print(super, stdout);
     printf(".\n");
@@ -2316,11 +2317,19 @@ class_pmeth(src_t * src, FILE * fsrc) {
 fread_t build_source;
 
 void
+class_pbase(cclass_t * class, FILE * fsrc) {
+  fprintf(fsrc, "typedef struct object_class {\n");
+  fprintf(fsrc, "  struct object_class * super;\n");
+  fprintf(fsrc, "  char * name;\n");
+  fprintf(fsrc, "} object_class_t;\n\n");
+}
+
+void
 class_pstruct(src_t * src, src_t * base, h_table * classes, FILE * fsrc) {
   tok_t * super = &base->super;
-  src_t * superclass = 0;
-  h_get(classes, super->string, super->len, (h_data_t *) &superclass);
-  if (base->super.string) {
+  if (super->string != basename) {
+    src_t * superclass = 0;
+    h_get(classes, super->string, super->len, (h_data_t *) &superclass);
     class_pstruct(src, superclass, classes, fsrc);
   }
   toks_cprint(src, &base->strukt, 1, fsrc);
@@ -2329,12 +2338,12 @@ class_pstruct(src_t * src, src_t * base, h_table * classes, FILE * fsrc) {
 void
 class_pstructs(cclass_t * class, src_t * src, FILE * fsrc) {
   utf_t * cname = src->cname;
+  utf_t * sname = src->sname;
   fprintf(fsrc, "typedef struct %s_class %s_class_t;\n", cname, cname);
   fprintf(fsrc, "typedef struct %s %s_t;\n\n", cname, cname);
-  fprintf(fsrc, "extern %s_class_t ", cname);
-  tok_print(&src->class, fsrc);
-  fprintf(fsrc, ";\n\n");
   fprintf(fsrc, "struct %s_class {\n", cname);
+  fprintf(fsrc, "  %s_class_t * super;\n", sname);
+  fprintf(fsrc, "  char * name;\n");
   h_table * meths = class_cmeths(class, src);
   h_entry * entry = meths->head;
   while (entry) {
@@ -2356,12 +2365,53 @@ class_pstructs(cclass_t * class, src_t * src, FILE * fsrc) {
     }
     entry = entry->back;
   }
-  h_free(meths);
   fprintf(fsrc, "};\n\n");
-  fprintf(fsrc, "  struct %s {", cname);
+  fprintf(fsrc, "  struct %s {\n", cname);
+  fprintf(fsrc, "    union {\n");
+  fprintf(fsrc, "      %s_class_t * class;\n", cname);
+  fprintf(fsrc, "      %s_class_t * _;\n", cname);
+  fprintf(fsrc, "    };");
   class_pstruct(src, src, class->classes, fsrc);
   fprintf(fsrc, "};\n\n");
-  fprintf(fsrc, "void %s_class_init(void);\n\n", cname);
+  entry = meths->head;
+  while (entry) {
+    meth_t * meth = (meth_t *) entry->val;
+    tok_t * name = &meth->or.name;
+    if (name->string != NULL &&
+        name->def == CDMETHOD) {
+      size_t i = tok_first_not_term(&meth->or.ret);
+      toks_cprint(src, &meth->or.ret, i, fsrc);
+      fprintf(fsrc, " %s_method_", cname);
+      tok_ptail(name, fsrc);
+      toks_cprint(src, &meth->or.arg, 0, fsrc);
+      fprintf(fsrc, ";\n");
+    }
+    entry = entry->back;
+  }
+  h_free(meths);
+  fprintf(fsrc, "\n%s_class_t ", cname);
+  tok_print(&src->class, fsrc);
+  fprintf(fsrc, " = {\n  ");
+  if (src->super.string == basename) {
+    fprintf(fsrc, "0");
+  } else {
+    tok_print(&src->super, fsrc);
+  }
+  fprintf(fsrc, ",\n  \"");
+  tok_print(&src->class, fsrc);
+  fprintf(fsrc, "\",\n");
+  ary_t * imps = &src->imps;
+  size_t i = 0;
+  for (; i < imps->len; i++) {
+    tok_t * tok = imp_get(imps, i);
+    fprintf(fsrc, "  &%s_method_", cname);
+    tok_ptail(tok, fsrc);
+    if (i != imps->len - 1) {
+      fprintf(fsrc, ",");
+    }
+    fprintf(fsrc, "\n");
+  }
+  fprintf(fsrc, "};\n\n");
 }
 
 void
@@ -2498,6 +2548,7 @@ build_source(utf_t * fname, utf_t * string, size_t size, void * fnames) {
                                ext,   strlen(ext));
   printf("Generating %s ... ", fwname);
   FILE * fsrc = fopen(fwname, "w");
+  class_pbase(class, fsrc);
   ary_t * srcs = &class->srcs;
   size_t i = 0;
   for (; i < srcs->len; i++) {
@@ -2506,9 +2557,7 @@ build_source(utf_t * fname, utf_t * string, size_t size, void * fnames) {
       class_praw(src, fsrc);
     } else {
       class_pstructs(class, src, fsrc);
-      class_pclass(src, fsrc);
       class_psrc(src, fsrc);
-      class_pmeth(src, fsrc);
     }
   }
   fclose(fsrc);
