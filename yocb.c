@@ -2273,6 +2273,364 @@ class_pcarg(cal_t * tok, size_t * i, FILE * fsrc) {
 }
 
 void
+class_ptyps(src_t * src, FILE * fsrc) {
+  ary_t * typs = &src->typs;
+  size_t i = 0;
+  for (; i < typs->len; i++) {
+    tok_t * tok = tok_get(typs, i);
+    tok_ptail(tok, fsrc);
+    fprintf(fsrc, "\n");
+  }
+}
+
+// print first variable of struct
+void
+class_pshead(utf_t * cname, FILE * fsrc) {
+  fprintf(fsrc,
+          "  struct %s {\n"
+          "    union {\n"
+          "      %s_class_t * class;\n"
+          "      %s_class_t * _;\n"
+          "    };", cname, cname, cname);
+}
+
+// print 2th ... last variables of struct
+void
+class_pstail(src_t * src, src_t * base, h_table * classes, FILE * fsrc) {
+  tok_t * super = &base->super;
+  if (super->string != basename) {
+    src_t * superclass = 0;
+    h_get(classes, super->string, super->len, (h_data_t *) &superclass);
+    class_pstail(src, superclass, classes, fsrc);
+  }
+  toks_cprint(src, &base->strukt, 1, fsrc);
+}
+
+void
+class_pend(FILE * fsrc) {
+  fprintf(fsrc, "};\n\n");
+}
+
+void
+class_pstruct(cclass_t * class, src_t * src, h_table * classes, FILE * fsrc) {
+  class_pshead(src->cname, fsrc);
+  class_pstail(src, src, class->classes, fsrc);
+  class_pend(fsrc);
+}
+
+void
+class_pmhead(utf_t * cname, utf_t * sname, FILE * fsrc) {
+  fprintf(fsrc,
+          "struct %s_class {\n"
+          "  char * name;\n"
+          "  %s_class_t * (* super)(%s_t *);\n", cname, sname, cname);
+}
+
+void
+class_pmtail(cclass_t * class, src_t * src, h_table * meths, FILE * fsrc) {
+  h_entry * entry = meths->head;
+  for (; entry; entry = entry->back) {
+    meth_t * meth = (meth_t *) entry->val;
+    tok_t * name = &meth->or.name;
+    if (name->string != NULL) {
+      fprintf(fsrc, "  ");
+      size_t i = tok_first_not_term(&meth->or.ret);
+      toks_cprint(src, &meth->or.ret, i, fsrc);
+      if (name->def == CDMETHOD) {
+        fprintf(fsrc, " (* ");
+        tok_ptail(name, fsrc);
+        fprintf(fsrc, ")");
+      } else {
+        tok_ptail(name, fsrc);
+      }
+      toks_cprint(src, &meth->or.arg, 0, fsrc);
+      fprintf(fsrc, ";\n");
+    }
+  }
+}
+
+void
+class_pmstruct(cclass_t * class, src_t * src, h_table * meths, FILE * fsrc) {
+  class_pmhead(src->cname, src->sname, fsrc);
+  class_pmtail(class, src, meths, fsrc);
+  class_pend(fsrc);
+}
+
+// print struct type
+void
+class_pctyp(utf_t * cname, FILE * fsrc) {
+  fprintf(fsrc,
+          "typedef struct %s_class %s_class_t;\n"
+          "typedef struct %s %s_t;\n\n", cname, cname, cname, cname);
+}
+
+void
+class_pmdecl(src_t * src, h_table * meths, FILE * fsrc) {
+  h_entry * entry = meths->head;
+  for (; entry; entry = entry->back) {
+    meth_t * meth = (meth_t *) entry->val;
+    tok_t * name = &meth->or.name;
+    if (name->string != NULL) {
+      size_t i = tok_first_not_term(&meth->or.ret);
+      toks_cprint(src, &meth->or.ret, i, fsrc);
+      fprintf(fsrc, " %s_method_", src->cname);
+      tok_ptail(name, fsrc);
+      toks_cprint(src, &meth->or.arg, 0, fsrc);
+      fprintf(fsrc, ";\n");
+    }
+  }
+}
+
+void
+class_pextn(src_t * src, FILE * fsrc) {
+  utf_t * cname = src->cname;
+  fprintf(fsrc, "extern %s_class_t ", cname);
+  tok_print(&src->class, fsrc);
+  fprintf(fsrc, ";\n");
+}
+
+void
+class_pbases(cclass_t * class, FILE * fsrc) {
+  utf_t object[] = "object";
+  class_pctyp(object, fsrc);
+  class_pmhead(object, object, fsrc);
+  class_pend(fsrc);
+  class_pshead(object, fsrc);
+  class_pend(fsrc);
+  h_table * rclasses = class->rclasses;
+  h_entry * entry = rclasses->head;
+  for (; entry; entry = entry->back) {
+    src_t * src = (src_t *) entry->val;
+    class_pctyp(src->cname, fsrc);
+  }
+  entry = rclasses->head;
+  for (; entry; entry = entry->back) {
+    src_t * src = (src_t *) entry->val;
+    class_ptyps(src, fsrc);
+    h_table * meths = class_cmeths(class, src);
+    class_pmstruct(class, src, meths, fsrc);
+    class_pstruct(class, src, class->classes, fsrc);
+    class_pextn(src, fsrc);
+    class_pmdecl(src, meths, fsrc);
+    h_free(meths);
+  }
+}
+
+void
+class_pmsuper(src_t * src, FILE * fsrc) {
+  tok_t * super = &src->super;
+  utf_t * cname = src->cname;
+  utf_t * sname = src->sname;
+  fprintf(fsrc,
+          "\n%s_class_t *\n"
+          "%s_method_super(%s_t * self) {\n", sname, cname, cname);
+  if (super->string == basename) {
+    fprintf(fsrc, "  return 0;\n}\n\n");
+  } else {
+    fprintf(fsrc, "  return &");
+    tok_print(super, fsrc);
+    fprintf(fsrc, ";\n}\n\n");
+  }
+}
+
+void
+class_pcmeth(cclass_t * class, src_t * src, h_size_t meths_len, FILE * fsrc) {
+  src_t * klass = src;
+  h_table * meths = h_init();
+  size_t mi = 0;
+  while (1) {
+    tok_t * super = &klass->super;
+    utf_t * cname = klass->cname;
+    ary_t * imps = &klass->imps;
+    size_t i = 0;
+    for (; i < imps->len; i++) {
+      tok_t * tok = imp_get(imps, i);
+      if (h_contains(meths, tok->string, tok->len)) continue;
+      h_insert(meths, tok->string, tok->len, 0);
+      fprintf(fsrc, "  .");
+      tok_ptail(tok, fsrc);
+      if (klass == src) {
+        fprintf(fsrc, " = &%s_method_", cname);
+        tok_ptail(tok, fsrc);
+      } else {
+        fprintf(fsrc, " = (void *) &%s_method_", cname);
+        tok_ptail(tok, fsrc);
+      }
+      if (mi != meths_len - 1) {
+        fprintf(fsrc, ",");
+      }
+      fprintf(fsrc, "\n");
+      mi++;
+    }
+    h_table * classes = class->classes;
+    int get = h_get(classes, super->string, super->len, (h_data_t *) &klass);
+    if (!get) break;
+  }
+  h_free(meths);
+}
+
+void
+class_pclass(cclass_t * class, src_t * src, h_table * meths, FILE * fsrc) {
+  utf_t * cname = src->cname;
+  fprintf(fsrc, "%s_class_t ", cname);
+  tok_print(&src->class, fsrc);
+  fprintf(fsrc, " = {\n  .name = \"");
+  tok_print(&src->class, fsrc);
+  fprintf(fsrc, "\",\n  .super = &%s_method_super,\n", cname);
+  class_pcmeth(class, src, meths->len, fsrc);
+  fprintf(fsrc, "};\n\n");
+}
+
+void
+class_pstructs(cclass_t * class, src_t * src, FILE * fsrc) {
+  utf_t * cname = src->cname;
+  class_pctyp(cname, fsrc);
+  class_ptyps(src, fsrc);
+  h_table * meths = class_cmeths(class, src);
+  class_pmstruct(class, src, meths, fsrc);
+  class_pstruct(class, src, class->classes, fsrc);
+  class_pmdecl(src, meths, fsrc);
+  class_pmsuper(src, fsrc);
+  class_pclass(class, src, meths, fsrc);
+  h_free(meths);
+}
+
+void
+class_freqs(cclass_t * class) {
+  ary_t * reqs = &class->reqs;
+  size_t i = 0;
+  for (; i < reqs->len; i++) {
+    ary_t * req = req_get(reqs, i);
+    ary_free(req);
+  }
+  ary_free(reqs);
+}
+
+void
+class_fsrc(src_t * src) {
+  if (!src->class.string) {
+    ary_free(&src->toks);
+    free(src);
+  }
+}
+
+void
+class_fsrcs(cclass_t * class) {
+  ary_t * srcs = &class->srcs;
+  size_t i = 0;
+  for (; i < srcs->len; i++) {
+    src_t * src = src_get(srcs, i);
+    class_fsrc(src);
+  }
+  ary_free(srcs);
+}
+
+void
+class_free(cclass_t * class) {
+  class_freqs(class);
+  class_fsrcs(class);
+}
+
+void
+class_fstruct(src_t * src) {
+  ary_free(&src->strukt);
+}
+
+void
+class_fmeths(src_t * class) {
+  size_t len = class->meths.len;
+  size_t i = 0;
+  for (; i < len; i++) {
+    meth_t * meth = meth_get(class, i);
+    if (meth->or.name.string == NULL) {
+      ary_free(&meth->nm.name);
+    } else {
+      ary_free(&meth->or.ret);
+      ary_free(&meth->or.arg);
+    }
+  }
+  ary_free(&class->meths);
+}
+
+void
+class_ftoks(src_t * src) {
+  ary_t * toks = &src->toks;
+  if (src->class.string) {
+    size_t i = 0;
+    for (; i < toks->len; i++) {
+      cal_t * tok = cal_get(toks, i);
+      free(tok);
+    }
+  }
+  ary_free(toks);
+}
+
+void
+class_fimps(src_t * src) {
+  ary_free(&src->imps);
+}
+
+void
+class_ftyps(src_t * src) {
+  ary_free(&src->typs);
+}
+
+void
+class_fclasses(cclass_t * class, h_table * fnames, utf_t * fname) {
+  h_table * classes = class->classes;
+  h_entry * entry = classes->head;
+  while (entry) {
+    src_t * src = (src_t *) entry->val;
+    class_ftoks(src);
+    class_fstruct(src);
+    class_fmeths(src);
+    class_fimps(src);
+    class_ftyps(src);
+    free(src->cname);
+    free(src->sname);
+    free(src);
+    entry = entry->back;
+  }
+  h_free(classes);
+  entry = fnames->head;
+  while (entry) {
+    utf_t * name = entry->key;
+    cclass_t * klass = (cclass_t *) entry->val;
+    if (name != fname) free(name);
+    h_free(klass->rclasses);
+    free(klass->string);
+    free(klass);
+    entry = entry->back;
+  }
+  h_free(fnames);
+}
+
+fread_t build_source;
+
+void
+class_require(cclass_t * class, utf_t * fname, h_table * fnames) {
+  class->rclasses = h_init();
+  h_table * rclasses = class->rclasses;
+  h_table * classes = class->classes;
+  ary_t * reqs = &class->reqs;
+  size_t i = 0;
+  for (; i < reqs->len; i++) {
+    ary_t * req = req_get(reqs, i);
+    utf_t * str = utf_get(req, 0);
+    size_t len = req->len;
+    utf_t * fname = tok_new_str(str, len);
+    int get = h_get(fnames, fname, len, (h_data_t *) &class);
+    if (!get) {
+      class = file_read(1, fname, build_source, fnames);
+    }
+    h_table * cclasses = class->classes;
+    h_merge(rclasses, cclasses);
+    h_free(cclasses);
+  }
+  h_merge(classes, rclasses);
+}
+
+void
 class_psrc(src_t * src, FILE * fsrc) {
   ary_t * toks = &src->toks;
   size_t i = 0;
@@ -2350,352 +2708,19 @@ class_psrc(src_t * src, FILE * fsrc) {
 }
 
 void
-class_ptyps(src_t * src, FILE * fsrc) {
-  ary_t * typs = &src->typs;
-  size_t i = 0;
-  for (; i < typs->len; i++) {
-    tok_t * tok = tok_get(typs, i);
-    tok_ptail(tok, fsrc);
-    fprintf(fsrc, "\n");
-  }
-}
-
-void
-class_pstruct(src_t * src, src_t * base, h_table * classes, FILE * fsrc) {
-  tok_t * super = &base->super;
-  if (super->string != basename) {
-    src_t * superclass = 0;
-    h_get(classes, super->string, super->len, (h_data_t *) &superclass);
-    class_pstruct(src, superclass, classes, fsrc);
-  }
-  toks_cprint(src, &base->strukt, 1, fsrc);
-}
-
-void
-class_pbases(cclass_t * class, FILE * fsrc) {
-  fprintf(fsrc, "struct object;\n");
-  fprintf(fsrc, "typedef struct object_class {\n");
-  fprintf(fsrc, "  char * name;\n");
-  fprintf(fsrc, "  struct object_class * (* super)(struct object *);\n");
-  fprintf(fsrc, "} object_class_t;\n\n");
-  h_table * rclasses = class->rclasses;
-  h_entry * entry = rclasses->head;
-  while (entry) {
-    src_t * src = (src_t *) entry->val;
-    utf_t * cname = src->cname;
-    fprintf(fsrc, "typedef struct %s_class %s_class_t;\n", cname, cname);
-    fprintf(fsrc, "typedef struct %s %s_t;\n", cname, cname);
-    entry = entry->back;
-  }
-  entry = rclasses->head;
-  while (entry) {
-    src_t * src = (src_t *) entry->val;
-    utf_t * cname = src->cname;
-    utf_t * sname = src->sname;
-    h_table * meths = class_cmeths(class, src);
-    h_entry * mentry = meths->head;
-    class_ptyps(src, fsrc);
-    fprintf(fsrc, "\nstruct %s_class {\n", cname);
-    fprintf(fsrc, "  char * name;\n");
-    fprintf(fsrc, "  %s_class_t * (* super)(%s_t *);\n", sname, cname);
-    while (mentry) {
-      meth_t * meth = (meth_t *) mentry->val;
-      tok_t * name = &meth->or.name;
-      if (name->string != NULL) {
-        fprintf(fsrc, "  ");
-        size_t i = tok_first_not_term(&meth->or.ret);
-        toks_cprint(src, &meth->or.ret, i, fsrc);
-        if (name->def == CDMETHOD) {
-          fprintf(fsrc, " (* ");
-          tok_ptail(name, fsrc);
-          fprintf(fsrc, ")");
-        } else {
-          tok_ptail(name, fsrc);
-        }
-        toks_cprint(src, &meth->or.arg, 0, fsrc);
-        fprintf(fsrc, ";\n");
-      }
-      mentry = mentry->back;
-    }
-    fprintf(fsrc, "};\n\n");
-    fprintf(fsrc, "  struct %s {\n", cname);
-    fprintf(fsrc, "    union {\n");
-    fprintf(fsrc, "      %s_class_t * class;\n", cname);
-    fprintf(fsrc, "      %s_class_t * _;\n", cname);
-    fprintf(fsrc, "    };");
-    class_pstruct(src, src, class->classes, fsrc);
-    fprintf(fsrc, "};\n\n");
-    mentry = meths->head;
-    while (mentry) {
-      meth_t * meth = (meth_t *) mentry->val;
-      tok_t * name = &meth->or.name;
-      if (name->string != NULL) {
-        size_t i = tok_first_not_term(&meth->or.ret);
-        toks_cprint(src, &meth->or.ret, i, fsrc);
-        fprintf(fsrc, " %s_method_", cname);
-        tok_ptail(name, fsrc);
-        toks_cprint(src, &meth->or.arg, 0, fsrc);
-        fprintf(fsrc, ";\n");
-      }
-      mentry = mentry->back;
-    }
-    h_free(meths);
-    entry = entry->back;
-  }
-  entry = rclasses->head;
-  while (entry) {
-    src_t * src = (src_t *) entry->val;
-    utf_t * cname = src->cname;
-    fprintf(fsrc, "extern %s_class_t ", cname);
-    tok_print(&src->class, fsrc);
-    fprintf(fsrc, ";\n");
-    entry = entry->back;
-  }
-  fprintf(fsrc, "\n");
-}
-
-void
-class_crcmeths(cclass_t * class, src_t * src, h_size_t meths_len, FILE * fsrc) {
-  src_t * child = src;
-  h_table * meths = h_init();
-  size_t mi = 0;
-  while (1) {
-    tok_t * super = &src->super;
-    utf_t * cname = src->cname;
-    ary_t * imps = &src->imps;
-    size_t i = 0;
-    for (; i < imps->len; i++) {
-      tok_t * tok = imp_get(imps, i);
-      if (h_contains(meths, tok->string, tok->len)) continue;
-      h_insert(meths, tok->string, tok->len, 0);
-      fprintf(fsrc, "  .");
-      tok_ptail(tok, fsrc);
-      if (src == child) {
-        fprintf(fsrc, " = &%s_method_", cname);
-        tok_ptail(tok, fsrc);
-      } else {
-        fprintf(fsrc, " = (void *) &%s_method_", cname);
-        tok_ptail(tok, fsrc);
-      }
-      if (mi != meths_len - 1) {
-        fprintf(fsrc, ",");
-      }
-      fprintf(fsrc, "\n");
-      mi++;
-    }
-    h_table * classes = class->classes;
-    int get = h_get(classes, super->string, super->len, (h_data_t *) &src);
-    if (!get) break;
-  }
-  h_free(meths);
-}
-
-void
-class_pstructs(cclass_t * class, src_t * src, FILE * fsrc) {
-  utf_t * cname = src->cname;
-  utf_t * sname = src->sname;
-  fprintf(fsrc, "typedef struct %s_class %s_class_t;\n", cname, cname);
-  fprintf(fsrc, "typedef struct %s %s_t;\n", cname, cname);
-  class_ptyps(src, fsrc);
-  fprintf(fsrc, "\nstruct %s_class {\n", cname);
-  fprintf(fsrc, "  char * name;\n");
-  fprintf(fsrc, "  %s_class_t * (* super)(%s_t *);\n", sname, cname);
-  h_table * meths = class_cmeths(class, src);
-  h_entry * entry = meths->head;
-  while (entry) {
-    meth_t * meth = (meth_t *) entry->val;
-    tok_t * name = &meth->or.name;
-    if (name->string != NULL) {
-      fprintf(fsrc, "  ");
-      size_t i = tok_first_not_term(&meth->or.ret);
-      toks_cprint(src, &meth->or.ret, i, fsrc);
-      if (name->def == CDMETHOD) {
-        fprintf(fsrc, " (* ");
-        tok_ptail(name, fsrc);
-        fprintf(fsrc, ")");
-      } else {
-        tok_ptail(name, fsrc);
-      }
-      toks_cprint(src, &meth->or.arg, 0, fsrc);
-      fprintf(fsrc, ";\n");
-    }
-    entry = entry->back;
-  }
-  fprintf(fsrc, "};\n\n");
-  fprintf(fsrc, "  struct %s {\n", cname);
-  fprintf(fsrc, "    union {\n");
-  fprintf(fsrc, "      %s_class_t * class;\n", cname);
-  fprintf(fsrc, "      %s_class_t * _;\n", cname);
-  fprintf(fsrc, "    };");
-  class_pstruct(src, src, class->classes, fsrc);
-  fprintf(fsrc, "};\n\n");
-  entry = meths->head;
-  while (entry) {
-    meth_t * meth = (meth_t *) entry->val;
-    tok_t * name = &meth->or.name;
-    if (name->string != NULL &&
-        name->def == CDMETHOD) {
-      size_t i = tok_first_not_term(&meth->or.ret);
-      toks_cprint(src, &meth->or.ret, i, fsrc);
-      fprintf(fsrc, " %s_method_", cname);
-      tok_ptail(name, fsrc);
-      toks_cprint(src, &meth->or.arg, 0, fsrc);
-      fprintf(fsrc, ";\n");
-    }
-    entry = entry->back;
-  }
-  fprintf(fsrc, "\n%s_class_t *\n", sname);
-  fprintf(fsrc, "%s_method_super(%s_t * self) {\n", cname, cname);
-  if (src->super.string == basename) {
-    fprintf(fsrc, "  return 0;\n}\n\n");
-  } else {
-    fprintf(fsrc, "  return &");
-    tok_print(&src->super, fsrc);
-    fprintf(fsrc, ";\n}\n\n");
-  }
-  fprintf(fsrc, "%s_class_t ", cname);
-  tok_print(&src->class, fsrc);
-  fprintf(fsrc, " = {\n  .name = \"");
-  tok_print(&src->class, fsrc);
-  fprintf(fsrc, "\",\n  .super = &%s_method_super,\n", cname);
-  class_crcmeths(class, src, meths->len, fsrc);
-  fprintf(fsrc, "};\n\n");
-  h_free(meths);
-}
-
-void
-class_freqs(cclass_t * class) {
-  ary_t * reqs = &class->reqs;
-  size_t i = 0;
-  for (; i < reqs->len; i++) {
-    ary_t * req = req_get(reqs, i);
-    ary_free(req);
-  }
-  ary_free(reqs);
-}
-
-void
-class_ftoks(src_t * src) {
-  ary_t * toks = &src->toks;
-  if (src->class.string) {
-    size_t i = 0;
-    for (; i < toks->len; i++) {
-      cal_t * tok = cal_get(toks, i);
-      free(tok);
-    }
-  }
-  ary_free(toks);
-}
-
-void
-class_fstruct(src_t * src) {
-  ary_free(&src->strukt);
-}
-
-void
-class_fmeths(src_t * class) {
-  size_t len = class->meths.len;
-  size_t i = 0;
-  for (; i < len; i++) {
-    meth_t * meth = meth_get(class, i);
-    if (meth->or.name.string == NULL) {
-      ary_free(&meth->nm.name);
-    } else {
-      ary_free(&meth->or.ret);
-      ary_free(&meth->or.arg);
-    }
-  }
-  ary_free(&class->meths);
-}
-
-void
-class_fimps(src_t * src) {
-  ary_free(&src->imps);
-}
-
-void
-class_ftyps(src_t * src) {
-  ary_free(&src->typs);
-}
-
-void
-class_fsrc(src_t * src) {
-  if (src->class.string) {
-    class_fimps(src);
-    class_ftyps(src);
-  } else {
-    free(src);
-  }
-}
-
-void
-class_fsrcs(cclass_t * class) {
+class_gen(cclass_t * class, FILE * fsrc) {
+  class_pbases(class, fsrc);
   ary_t * srcs = &class->srcs;
   size_t i = 0;
   for (; i < srcs->len; i++) {
     src_t * src = src_get(srcs, i);
-    class_ftoks(src);
-    class_fsrc(src);
-  }
-  ary_free(srcs);
-}
-
-void
-class_free(cclass_t * class) {
-  class_freqs(class);
-  class_fsrcs(class);
-}
-
-void
-class_fclasses(cclass_t * class, h_table * fnames, utf_t * fname) {
-  h_table * classes = class->classes;
-  h_entry * entry = classes->head;
-  while (entry) {
-    src_t * src = (src_t *) entry->val;
-    class_fstruct(src);
-    class_fmeths(src);
-    free(src->cname);
-    free(src->sname);
-    free(src);
-    entry = entry->back;
-  }
-  h_free(classes);
-  h_free(class->rclasses);
-  entry = fnames->head;
-  while (entry) {
-    utf_t * name = entry->key;
-    cclass_t * klass = (cclass_t *) entry->val;
-    if (name != fname) free(name);
-    free(klass->string);
-    free(klass);
-    entry = entry->back;
-  }
-  h_free(fnames);
-}
-
-fread_t build_source;
-
-void
-class_require(cclass_t * class, utf_t * fname, h_table * fnames) {
-  class->rclasses = h_init();
-  h_table * rclasses = class->rclasses;
-  h_table * classes = class->classes;
-  ary_t * reqs = &class->reqs;
-  size_t i = 0;
-  for (; i < reqs->len; i++) {
-    ary_t * req = req_get(reqs, i);
-    utf_t * str = utf_get(req, 0);
-    size_t len = req->len;
-    utf_t * fname = tok_new_str(str, len);
-    int get = h_get(fnames, fname, len, (h_data_t *) &class);
-    if (!get) {
-      class = file_read(1, fname, build_source, fnames);
+    if (src->class.string == NULL) {
+      class_praw(src, fsrc);
+    } else {
+      class_pstructs(class, src, fsrc);
+      class_psrc(src, fsrc);
     }
-    h_table * cclasses = class->classes;
-    h_merge(rclasses, cclasses);
-    h_free(cclasses);
   }
-  h_merge(classes, rclasses);
 }
 
 void *
@@ -2709,18 +2734,7 @@ build_source(utf_t * fname, utf_t * string, size_t size, void * fnames) {
                                ext,   strlen(ext));
   printf("Generating %s ... ", fwname);
   FILE * fsrc = fopen(fwname, "w");
-  class_pbases(class, fsrc);
-  ary_t * srcs = &class->srcs;
-  size_t i = 0;
-  for (; i < srcs->len; i++) {
-    src_t * src = src_get(srcs, i);
-    if (src->class.string == NULL) {
-      class_praw(src, fsrc);
-    } else {
-      class_pstructs(class, src, fsrc);
-      class_psrc(src, fsrc);
-    }
-  }
+  class_gen(class, fsrc);
   fclose(fsrc);
   printf("OK\n");
   free(fwname);
