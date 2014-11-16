@@ -1,12 +1,15 @@
+#include <stdio.h>
+
 :class Object {
 
   struct {
-    char * a;
-  }
-
-  methods {
-    · *    (* -new)       (void);
+    char * hello_world;
   }
 }
 
-:end
+void
+:realloc(self, h_size_t capa) {
+  @bins = realloc(@bins, capa * sizeof(h_entry *));
+  memset(@bins, 0, capa * sizeof(h_entry *));
+  @capa = capa;
+}

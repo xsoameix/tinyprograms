@@ -4,16 +4,16 @@ typedef struct object object_t;
 extern object_class_t Object;
 
 struct object_class {
-  object_class_t *    super;
-  char *  name;
-  size_t  size;
-  size_t  instance_size;
-  object_t * new(void);
-  void initialize(object_t * self);
-  void delete(object_t * self);
-  object_class_t * klass(object_t * self);
-  char * class_name(object_t * self);
-  int is_a(object_t * self, object_class_t * class);
+  object_class_t *   super;
+  char * name;
+  size_t size;
+  size_t instance_size;
+  object_t * (* new)(void);
+  void (* initialize)(object_t * self);
+  void (* delete)(object_t * self);
+  object_class_t * (* klass)(object_t * self);
+  char * (* class_name)(object_t * self);
+  int (* is_a)(object_t * self, object_class_t * class);
 };
 
   struct object {

@@ -1,0 +1,77 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+:class Ary {
+
+  struct {
+    int len;
+    void * objs;
+  }
+}
+
+int
+:size(void) {
+  return 0;
+}
+
+void *
+:new(void * class, int len) {
+  ·· * klass = class;
+  · * self = calloc(1, sizeof(·) + len * klass->size());
+  @class = class;
+  @len = len;
+  @objs = (void *) self + sizeof(·);
+  return self;
+}
+
+void *
+:get(self, int i) {
+  return @objs + @class->size() * i;
+}
+
+int
+:len(self) {
+  return @len;
+}
+
+void
+:free(self) {
+  free(self);
+}
+:class Period {
+
+  struct {
+    int x;
+    int y;
+  }
+}
+
+:class Periods < Ary {}
+
+· *
+:new(int len) { return super(&Ary, len); }
+
+int
+:size(void) { return sizeof(period_t); }
+
+int
+main(void) {
+  int len;
+  while (scanf("%d", &len) == 1) {
+    periods_t * pids = Periods.new(len);
+    int i = 0;
+    for (; i < pids·len; i++) {
+      period_t * p = pids·get(i);
+      scanf("%d%d", &p->x, &p->y);
+    }
+    i = 0;
+    for (; i < pids·len; i++) {
+      period_t * pid = pids·get(i);
+      printf("[%d %d]\n", pid->x, pid->y);
+    }
+    puts(pids->class->name);
+    pids·free;
+  }
+  return 0;
+}

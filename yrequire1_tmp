@@ -1,0 +1,24 @@
+# 1 "yrequire1.c"
+# 1 "<command-line>"
+# 1 "/usr/include/stdc-predef.h" 1 3 4
+# 1 "<command-line>" 2
+# 1 "yrequire1.c"
+# 1 "yrequire2.c" 1
+:require "yrequire1.c"
+
+:class Require2 {
+
+  struct {
+    int a;
+  }
+}
+# 2 "yrequire1.c" 2
+
+:require "yrequire2.c"
+
+:class Require1 {
+
+  struct {
+    int a;
+  }
+}

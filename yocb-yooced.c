@@ -5,38 +5,27 @@
 #include <string.h>
 #include <inttypes.h>
 
-typedef struct object_class object_class_t;
-typedef struct object object_t;
+void
+ckfree(void * p) {
+  free(p);
+}
 
-extern object_class_t Object;
+:class Hash {
 
-struct object_class {
-  object_class_t *   super;
-  char * name;
-  size_t size;
-  size_t instance_size;
-  object_t * (* new)(void);
-};
+  struct {
+    h_size_t capa;
+    h_size_t len;
+    h_entry ** bins;
+    h_entry * head, * tail;
+  }
+}
 
-  struct object {
-    union {
-      object_class_t * class;
-      object_class_t * _;
-    };
-  };
+:typedef uint8_t utf_t;
 
-void object_class_init(void);
+:typedef utf_t * h_data_t;
+:typedef uintptr_t h_size_t;
 
-
-typedef uint8_t utf_t;
-
-typedef utf_t * h_data_t;
-typedef uintptr_t h_size_t;
-
-typedef struct hash_class hash_class_t;
-typedef struct hash hash_t;
-
-typedef struct h_entry {
+:typedef struct h_entry {
   h_size_t hash;
   h_size_t klen; // key len
   h_data_t key;
@@ -45,105 +34,13 @@ typedef struct h_entry {
   struct h_entry * fore, * back;
 } h_entry;
 
-typedef struct {
-  h_size_t capa;
-  h_size_t len;
-  h_entry ** bins;
-  h_entry * head, * tail;
-} h_table;
-
-typedef void h_lookup_t(hash_t * table,
-                        h_data_t key, h_size_t klen,
-                        h_data_t * val, h_size_t hval, h_size_t pos,
-                        h_entry * entry);
-
-extern hash_class_t Hash;
-
-struct hash_class {
-  hash_class_t *   super;
-  char * name;
-  size_t size;
-  size_t instance_size;
-  hash_t * (* new)(void);
-  h_size_t (* hash)(h_data_t string, h_size_t len);
-  h_size_t (* bin_pos)(hash_t * self, h_size_t hval);
-  h_entry * (* new_entry)(hash_t * self, h_data_t key, h_size_t klen,           h_data_t val, h_size_t hval, h_size_t pos);
-  h_size_t (* new_capa)(h_size_t old);
-  void (* add)(hash_t * self, h_data_t key, h_size_t klen,     h_data_t val, h_size_t hval, h_size_t pos);
-  int (* hit)(h_entry * entry, h_data_t key, h_size_t klen, h_size_t hval);
-  h_entry * (* find)(hash_t * self, h_data_t key, h_size_t klen,      h_size_t hval, h_size_t pos);
-  int (* lookup)(hash_t * self, h_data_t key, h_size_t klen, h_data_t * val,        h_lookup_t * yield);
-  void (* insert_cb)(hash_t * self,           h_data_t key, h_size_t klen,           h_data_t * val, h_size_t hval, h_size_t pos, h_entry * entry);
-  void (* get_cb)(hash_t * self,        h_data_t key, h_size_t klen,        h_data_t * val, h_size_t hval, h_size_t pos, h_entry * entry);
-  int (* insert)(hash_t * self, h_data_t key, h_size_t klen, h_data_t val);
-  int (* get)(hash_t * self, h_data_t key, h_size_t klen, h_data_t * val);
-  void (* merge)(hash_t * self, hash_t * x);
-  hash_t * (* init_with_capa)(h_size_t capa);
-  hash_t * (* init)(void);
-  void (* free)(hash_t * self);
-};
-
-  struct hash {
-    union {
-      hash_class_t * class;
-      hash_class_t * _;
-    };
-  
-    h_size_t capa;
-    h_size_t len;
-    h_entry ** bins;
-    h_entry * head, * tail;
-  };
-
-void hash_class_init(void);
-
-
-object_class_t Object;
-
-static object_t *
-object_method_new(void) {
-  return 0;
-}
-
-void
-class_init(object_class_t * class, object_class_t * super, char * class_name,
-           size_t class_size, size_t instance_size) {
-  if (class->size != 0) return;
-  class->super = super;
-  class->name = class_name;
-  class->size = class_size;
-  class->instance_size = instance_size;
-  // inherit
-  size_t offset = offsetof(object_class_t, new);
-  if (class != &Object) {
-    memcpy((char *) class + offset,
-           (char *) class->super + offset,
-           class->super->size - offset);
-  }
-}
-
-void
-object_class_init(void) {
-  class_init(&Object, 0, "Object",
-    sizeof(object_class_t), sizeof(object_t));
-  Object.new = object_method_new;
-}
-
-
-hash_class_t Hash;
-
-void
-ckfree(void * p) {
-  free(p);
-}
-
 // Fowler–Noll–Vo hash function
 
 #define FNV1_32A_INIT 0x811c9dc5
 #define FNV_32_PRIME 0x01000193
 
 static h_size_t
-hash_method_hash(h_data_t string, h_size_t len) {
+:hash(h_data_t string, h_size_t len) {
   register h_size_t hval = FNV1_32A_INIT;
   // FNV-1a
   h_size_t i = 0;
@@ -155,28 +52,28 @@ hash_method_hash(h_data_t string, h_size_t len) {
 }
 
 h_size_t
-hash_method_bin_pos(hash_t * self, h_size_t hval) {
-  return hval % self->capa;
+:bin_pos(self, h_size_t hval) {
+  return hval % @capa;
 }
 
 h_entry *
-hash_method_new_entry(hash_t * self, h_data_t key, h_size_t klen,
+:new_entry(self, h_data_t key, h_size_t klen,
            h_data_t val, h_size_t hval, h_size_t pos) {
   h_entry * entry = calloc(1, sizeof(h_entry));
   entry->hash = hval;
   entry->klen = klen;
   entry->key = key;
   entry->val = val;
-  entry->next = self->bins[pos];
-  self->bins[pos] = entry;
+  entry->next = @bins[pos];
+  @bins[pos] = entry;
   return entry;
 }
 
 void
 :realloc(self, h_size_t capa) {
-  self->bins = realloc(self->bins, capa * sizeof(h_entry *));
-  memset(self->bins, 0, capa * sizeof(h_entry *));
-  self->capa = capa;
+  @bins = realloc(@bins, capa * sizeof(h_entry *));
+  memset(@bins, 0, capa * sizeof(h_entry *));
+  @capa = capa;
 }
 
 #define H_DEFAULT_INIT_TABLE_SIZE 11
@@ -219,7 +116,7 @@ static const uint_fast32_t h_primes[] = {
 #define lenof(ary) (sizeof(ary) / sizeof(ary[0]))
 
 h_size_t
-hash_method_new_capa(h_size_t old) {
+:new_capa(h_size_t old) {
   h_size_t new = H_MINSIZE;
   h_size_t i = 0;
   for (; i < lenof(h_primes); i++) {
@@ -233,14 +130,14 @@ hash_method_new_capa(h_size_t old) {
 
 void
 :rehash(self) {
-  h_size_t capa = Hash.new_capa(self->capa + 1);
-  self->_->realloc(self, capa);
-  h_entry * entry = self->head;
+  h_size_t capa = Hash.new_capa(@capa + 1);
+  ·realloc(capa);
+  h_entry * entry = @head;
   if (entry != 0) {
     do {
-      h_size_t pos = self->_->bin_pos(self, entry->hash);
-      entry->next = self->bins[pos];
-      self->bins[pos] = entry;
+      h_size_t pos = ·bin_pos(entry->hash);
+      entry->next = @bins[pos];
+      @bins[pos] = entry;
       entry = entry->back;
     } while (entry != 0);
   }
@@ -249,23 +146,23 @@ void
 #define H_DEFAULT_MAX_DENSITY 5
 
 void
-hash_method_add(hash_t * self, h_data_t key, h_size_t klen,
+:add(self, h_data_t key, h_size_t klen,
      h_data_t val, h_size_t hval, h_size_t pos) {
-  if (self->len > H_DEFAULT_MAX_DENSITY * self->capa) {
-    self->_->rehash(self);
-    pos = self->_->bin_pos(self, hval);
+  if (@len > H_DEFAULT_MAX_DENSITY * @capa) {
+    ·rehash;
+    pos = ·bin_pos(hval);
   }
-  h_entry * entry = self->_->new_entry(self, key, klen, val, hval, pos);
-  if (self->head != 0) {
-    entry->fore = self->tail;
-    self->tail->back = entry;
+  h_entry * entry = ·new_entry(key, klen, val, hval, pos);
+  if (@head != 0) {
+    entry->fore = @tail;
+    @tail->back = entry;
     entry->back = 0;
-    self->tail = entry;
+    @tail = entry;
   } else {
-    self->head = self->tail = entry;
+    @head = @tail = entry;
     entry->fore = entry->back = 0;
   }
-  self->len++;
+  @len++;
 }
 
 int
@@ -274,15 +171,15 @@ int
 }
 
 int
-hash_method_hit(h_entry * entry, h_data_t key, h_size_t klen, h_size_t hval) {
+:hit(h_entry * entry, h_data_t key, h_size_t klen, h_size_t hval) {
   return entry != 0 && (entry->hash != hval ||
                         Hash.eq(entry->key, entry->klen, key, klen));
 }
 
 h_entry *
-hash_method_find(hash_t * self, h_data_t key, h_size_t klen,
+:find(self, h_data_t key, h_size_t klen,
       h_size_t hval, h_size_t pos) {
-  h_entry * entry = self->bins[pos];
+  h_entry * entry = @bins[pos];
   if (Hash.hit(entry, key, klen, hval)) {
     while (Hash.hit(entry->next, key, klen, hval)) {
       entry = entry->next;
@@ -292,29 +189,34 @@ hash_method_find(hash_t * self, h_data_t key, h_size_t klen,
   return entry;
 }
 
+:typedef void h_lookup_t(hash_t * table,
+                         h_data_t key, h_size_t klen,
+                         h_data_t * val, h_size_t hval, h_size_t pos,
+                         struct h_entry * entry);
+
 int
-hash_method_lookup(hash_t * self, h_data_t key, h_size_t klen, h_data_t * val,
+:lookup(self, h_data_t key, h_size_t klen, h_data_t * val,
         h_lookup_t * yield) {
   h_size_t hval = Hash.hash(key, klen);
-  h_size_t pos = self->_->bin_pos(self, hval);
-  h_entry * entry = self->_->find(self, key, klen, hval, pos);
+  h_size_t pos = ·bin_pos(hval);
+  h_entry * entry = ·find(key, klen, hval, pos);
   yield(self, key, klen, val, hval, pos, entry);
   return entry != NULL;
 }
 
 void
-hash_method_insert_cb(hash_t * self,
+:insert_cb(self,
            h_data_t key, h_size_t klen,
            h_data_t * val, h_size_t hval, h_size_t pos, h_entry * entry) {
   if (entry == NULL) {
-    self->_->add(self, key, klen, (h_data_t) val, hval, pos);
+    ·add(key, klen, (h_data_t) val, hval, pos);
   } else {
     entry->val = (h_data_t) val;
   }
 }
 
 void
-hash_method_get_cb(hash_t * self,
+:get_cb(self,
         h_data_t key, h_size_t klen,
         h_data_t * val, h_size_t hval, h_size_t pos, h_entry * entry) {
   if (entry != NULL && val != NULL) {
@@ -323,91 +225,67 @@ hash_method_get_cb(hash_t * self,
 }
 
 int
-hash_method_insert(hash_t * self, h_data_t key, h_size_t klen, h_data_t val) {
-  return self->_->lookup(self, key, klen, (h_data_t *) val, _cb);
+:insert(self, h_data_t key, h_size_t klen, h_data_t val) {
+  return ·lookup(key, klen, (h_data_t *) val, Hash.insert_cb);
 }
 
 int
-hash_method_get(hash_t * self, h_data_t key, h_size_t klen, h_data_t * val) {
-  return self->_->lookup(self, key, klen, val, h_get_cb);
+:get(self, h_data_t key, h_size_t klen, h_data_t * val) {
+  return ·lookup(key, klen, val, Hash.get_cb);
 }
 
 int
 :contains(self, h_data_t key, h_size_t klen) {
-  return self->_->lookup(self, key, klen, 0, h_get_cb);
+  return ·lookup(key, klen, 0, Hash.get_cb);
 }
 
 void
-hash_method_merge(hash_t * self, hash_t * x) {
+:merge(self, · * x) {
   h_entry * head = x->head;
   while (head) {
-    self->_->insert(self, head->key, head->klen, head->val);
+    ·insert(head->key, head->klen, head->val);
     head = head->back;
   }
 }
 
-hash_t *
-hash_method_init_with_capa(h_size_t capa) {
+· *
+:init_with_capa(h_size_t capa) {
   capa = Hash.new_capa(capa);
-  hash_t * table = calloc(1, sizeof(Hash.instance_size));
+  · * table = calloc(1, sizeof(Hash.instance_size));
+  table->_ = &Hash;
   table->capa = capa;
   table->bins = calloc(capa, sizeof(h_entry *));
   return table;
 }
 
-hash_t *
-hash_method_init(void) {
+· *
+:init(void) {
   return Hash.init_with_capa(0);
 }
 
 void
 :clear(self) {
   h_size_t i = 0;
-  for (; i < self->capa; i++) {
-    h_entry * entry = self->bins[i];
+  for (; i < @capa; i++) {
+    h_entry * entry = @bins[i];
     while (entry != 0) {
       h_entry * next = entry->next;
       ckfree(entry);
       entry = next;
     }
-    self->bins[i] = 0;
+    @bins[i] = 0;
   }
-  self->len = 0;
-  self->head = 0;
-  self->tail = 0;
+  @len = 0;
+  @head = 0;
+  @tail = 0;
 }
 
 void
-hash_method_free(hash_t * self) {
-  self->_->clear(self);
-  ckfree(self->bins);
+:free(self) {
+  ·clear;
+  ckfree(@bins);
   ckfree(self);
 }
-
-void
-hash_class_init(void) {
-  object_class_init();
-  o_init_class((Object *) &Hash, (Object *) &Object, "Hash",
-    sizeof(hash_class_t), sizeof(hash_t));
-  Hash.hash = hash_method_hash;
-  Hash.bin_pos = hash_method_bin_pos;
-  Hash.new_entry = hash_method_new_entry;
-  Hash.new_capa = hash_method_new_capa;
-  Hash.add = hash_method_add;
-  Hash.hit = hash_method_hit;
-  Hash.find = hash_method_find;
-  Hash.lookup = hash_method_lookup;
-  Hash.insert_cb = hash_method_insert_cb;
-  Hash.get_cb = hash_method_get_cb;
-  Hash.insert = hash_method_insert;
-  Hash.get = hash_method_get;
-  Hash.merge = hash_method_merge;
-  Hash.init_with_capa = hash_method_init_with_capa;
-  Hash.init = hash_method_init;
-  Hash.free = hash_method_free;
-}
-
-
 
 //                                  0zzz zzzz
 //                                   000 0000 (     0) to
@@ -2490,10 +2368,10 @@ class_pstructs(cclass_t * class, FILE * fsrc) {
         }
         entry = entry->back;
       }
-      h_free(meths);
+      meths·free;
       fprintf(fsrc, "};\n\n");
       fprintf(fsrc, "  struct %s {", cname);
-      class_pstruct(src, src, classes, fsrc);
+      class_pstruct(src, src, class->classes, fsrc);
       fprintf(fsrc, "};\n\n");
       fprintf(fsrc, "void %s_class_init(void);\n\n", cname);
     } else {
@@ -2593,7 +2471,7 @@ class_fclasses(cclass_t * class, hash_t * fnames, utf_t * fname) {
     ckfree(src);
     entry = entry->back;
   }
-  h_free(classes);
+  classes·free;
   entry = fnames->head;
   while (entry) {
     utf_t * name = entry->key;
@@ -2603,7 +2481,7 @@ class_fclasses(cclass_t * class, hash_t * fnames, utf_t * fname) {
     ckfree(klass);
     entry = entry->back;
   }
-  h_free(fnames);
+  fnames·free;
 }
 
 void
@@ -2621,15 +2499,16 @@ class_require(cclass_t * class, utf_t * fname, hash_t * fnames) {
       class = file_read(1, fname, build_source, fnames);
     }
     hash_t * cclasses = class->classes;
-    h_merge(classes, cclasses);
-    h_free(cclasses);
+    classes·merge(cclasses);
+    classes·free;
   }
 }
 
 void *
-build_source(utf_t * fname, utf_t * string, size_t size, void * fnames) {
+build_source(utf_t * fname, utf_t * string, size_t size, void * fnames_arg) {
   cclass_t * class = class_source(fname, string, size);
-  fnames·insert(name, strlen(fname), (h_data_t) class);
+  hash_t * fnames = fnames_arg;
+  fnames·insert(fname, strlen(fname), (h_data_t) class);
   class_require(class, fname, fnames);
   // file write name
   utf_t ext[] = ".c";
@@ -2638,6 +2517,8 @@ build_source(utf_t * fname, utf_t * string, size_t size, void * fnames) {
   printf("Generating %s ... ", fwname);
   FILE * fsrc = fopen(fwname, "w");
   class_pstructs(class, fsrc);
+  ary_t * srcs = &class->srcs;
+  size_t i = 0;
   for (; i < srcs->len; i++) {
     src_t * src = src_get(srcs, i);
     if (src->class.string == NULL) {
@@ -2687,6 +2568,7 @@ scan_args(int argc, utf_t ** argv) {
 
 int
 main(int argc, utf_t ** argv) {
+  hash_class_init();
   action act = scan_args(argc, argv);
   if (act == SOURCE) {
     file_read(argc - 1, argv[1], build_source_start, 0);
