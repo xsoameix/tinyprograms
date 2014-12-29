@@ -1,0 +1,32 @@
+16 8
++A+B+C+D;
++E+F+F+H;
++A+B-G;
++O+J-F;
++H+I+C;
++P;
++O+M+L;
++M-L+P;
+16 11
++A+B+C+D;
++E+F+F+H;
++A+B-G;
++P-O;
++O+J-F;
++H+I+C;
++P;
++O;
++O+M+L;
+-O-P;
++M-L+P;
+5 6
++A+B-C-D-E;
++B;
+-A;
++C;
++D;
+-E;
+1 2
++A;
+-A;
+0 0
