@@ -1,10 +1,7 @@
-int
-foo(void) {
-  return 0;
-}
+#include <stdio.h>
 
 int
 main(void) {
-  foo();
+  puts("hello ?");
   return 0;
 }

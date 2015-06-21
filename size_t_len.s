@@ -1,4 +1,9 @@
 	.file	"size_t_len.c"
+	.section	.rodata
+.LC0:
+	.string	"foo:   %zu\n"
+.LC1:
+	.string	"clone: %zu\n"
 	.text
 	.globl	main
 	.type	main, @function
@@ -10,12 +15,20 @@ main:
 	.cfi_offset 6, -16
 	movq	%rsp, %rbp
 	.cfi_def_cfa_register 6
-	movl	$0, -48(%rbp)
-	movl	$1, -44(%rbp)
-	movl	$2, -40(%rbp)
-	movl	$3, -36(%rbp)
+	subq	$16, %rsp
+	movb	$0, -16(%rbp)
+	movb	$1, -15(%rbp)
+	movb	$2, -14(%rbp)
+	movl	$3, %esi
+	movl	$.LC0, %edi
 	movl	$0, %eax
-	popq	%rbp
+	call	printf
+	movl	$3, %esi
+	movl	$.LC1, %edi
+	movl	$0, %eax
+	call	printf
+	movl	$0, %eax
+	leave
 	.cfi_def_cfa 7, 8
 	ret
 	.cfi_endproc
