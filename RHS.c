@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <gvc.h> /* please add: `pkg-config libgvc --cflags --libs` */
 /* AVL tree, k: key, d: data(trie root index), h: height */
-typedef struct { int l, r, h, k, d; } a_t;
+typedef struct { int l, r, h, k, d; } a_t; /* TODO: Add LHS to data */
                           /* 1         3             */
 int /* rotate left */     /*   3  => 1   4           */
 arol(int * r, a_t * t) {  /*  2 4     2      c: copy */
@@ -38,7 +39,7 @@ typedef struct { int d, c; } t_t; /* trie, d: data(AVL root index), c: count */
 int /* insert, s: string, t: trie, a: AVL forest, n: AVL forest length */
 tins(char * s, t_t * t, a_t * a, int * l, int * n) {
   int r = 0;
-  while (*s && afet(*s, &r, t[r].d, a) && (s++, !t[r].c));
+  while (*s && afet(*s, &r, t[r].d, a)) s++;
   while (*s || !++t[r].c) ains(*s++, *l, &t[r].d, a, n), r = (*l)++;
 }
 
@@ -46,6 +47,12 @@ int /* next, true if children of trie root included it */
 tnex(char s, int * r, t_t * t, a_t * a) {
   int c = * r;
   return (afet(s, &c, t[c].d, a) || !s && t[c].c) && (* r = c, 1);
+}
+
+typedef struct { int i, l; } r_t; /* range used by radix tree */
+
+int /* TODO: insert */
+rins(char * s, r_t * r, t_t * t, a_t * a, int * m, int * l, int * n) {
 }
 
 int
@@ -62,6 +69,12 @@ main(void) {
   /*qsort(rhs, sizeof(char *), l, cmp);*/
   for (i = 0; i < l; i++) puts(rhs[i]);
   t_t t[100] = {0}; a_t a[100] = {0}; int r = 0, ar = 1, tl = 1, al = 1, d;
+  /* test trie by assigning long sentances to trie *//*
+  char * test[] = {"romane","romanus","romulus","rubens","ruber","rubicon",
+    "rubicundus"};
+  for (i = 0; i < sizeof test/sizeof *test; i++) tins(test[i], t, a, &tl, &al);
+  */
+  /* test trie by assigning character to trie node data */
   for (i = 0; i < l; i++) tins(rhs[i]+2, t, a, &tl, &al);
   printf("  has U(%d", r);printf("): %d\n", tnex('U', &r, t, a));
   printf("  has U(%d", r);printf("): %d\n", tnex('\0', &r, t, a));
@@ -80,7 +93,7 @@ main(void) {
   printf("  has V*D(%d", r);printf("): %d\n", tnex('V', &r, t, a));
   printf("  has V*D(%d", r);printf("): %d\n", tnex('*', &r, t, a));
   printf("  has V*D(%d", r);printf("): %d\n", tnex('D', &r, t, a)), r = 0;
-  /*
+  /* test trie by assigning number to trie node data *//*
   char str[1] = {'\x00'};
   tins(str, t, a, &tl, &al);
   tins(str, t, a, &tl, &al);
@@ -103,7 +116,7 @@ main(void) {
   printf("  has 9 6(%d", r);printf("): %d\n", tnex('\x09', &r, t, a));
   printf("  has 9 6(%d", r);printf("): %d\n", tnex('\x06', &r, t, a)), r = 0;
   */
-  /*
+  /* test AVL tree *//*
   ains(8, 9, &ar, a, &al);
   ains(3, 9, &ar, a, &al);
   ains(4, 9, &ar, a, &al);
@@ -121,5 +134,47 @@ main(void) {
   printf("  fetch 8: %d\n", afet(8, &d, ar, a));
   printf("  fetch 9: %d\n", afet(9, &d, ar, a));
   */
+  Agraph_t * g = agopen("g", Agdirected, 0);
+  Agnode_t * tn[100], * an[100];
+  Agedge_t * e;
+  GVC_t * gvc = gvContext();
+  char buf[250] = {0}; int bi = 0, m;
+  agsafeset(g, "rankdir", "LR", "");
+  for (i = 0; i < tl; i++)
+    m = sprintf(buf+bi, "t%0X", i)+1,
+    tn[i] = agnode(g, buf+bi, 1), bi += m,
+    agsafeset(tn[i], "label", "Trie", ""),
+    agsafeset(tn[i], "colorscheme", "ylgn9", ""),
+    t[i].c && agsafeset(tn[i], "fillcolor", "4", ""),
+    agsafeset(tn[i], "shape", "rectangle", ""),
+    agsafeset(tn[i], "style", "rounded,filled", ""),
+    agsafeset(tn[i], "fixedsize", "true", ""),
+    agsafeset(tn[i], "fontname", "Sans", "");
+  for (i = 0; i < al; i++)
+    m = sprintf(buf+bi, "a%0X", i)+1,
+    an[i] = agnode(g, buf+bi, 1), bi += m,
+    m = sprintf(buf+bi, "%c", a[i].k ? a[i].k : '#')+1,
+    agsafeset(an[i], "label", buf+bi, ""), bi += m,
+    agsafeset(an[i], "shape", "circle", ""),
+    agsafeset(an[i], "fontname", "Sans", ""),
+    agsafeset(an[i], "colorscheme", "blues9", ""),
+    agsafeset(an[i], "fillcolor", "4", ""),
+    agsafeset(an[i], "style", "filled", "");
+  for (i = 0; i < tl; i++)
+    t[i].d && (e = agedge(g, tn[i], an[t[i].d], 0, 1),
+               agsafeset(e, "arrowhead", "none", ""));
+  for (i = 0; i < al; i++)
+    a[i].l && (e = agedge(g, an[i], an[a[i].l], 0, 1),
+               agsafeset(e, "colorscheme", "blues9", ""),
+               agsafeset(e, "color", "7", "")),
+    a[i].r && (e = agedge(g, an[i], an[a[i].r], 0, 1),
+               agsafeset(e, "colorscheme", "blues9", ""),
+               agsafeset(e, "color", "7", "")),
+    e = agedge(g, an[i], tn[a[i].d], 0, 1),
+    agsafeset(e, "arrowhead", "none", "");
+  gvLayout(gvc, g, "dot");
+  gvRenderFilename(gvc, g, "png", "graphviz.png");
+  gvFreeLayout(gvc, g);
+  agclose(g);
   return 0;
 }
