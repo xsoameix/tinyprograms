@@ -57,50 +57,63 @@ tmap(char * s, int d, t_t * t, a_t * a, int * l, int * n) {
 
 int /* next, true if children of trie root included it */
 tnex(char s, int * r, t_t * t, a_t * a) {
-  int c = * r;
-  return afet(s, &c, t[c].d, a, tm, 0) && (* r = c, 1) || !s && t[c].c;
+  int c = * r; /* c: copy */
+  return afet(s, &c, t[c].d, a, tm, 0) && (* r = a[c].d, 1) || !s && t[c].c;
 }
 
 int /* retrieve, 0 if the data does not exist or no children of included it */
 tret(char s, int * r, t_t * t, a_t * a) {
   int c = * r;
-  return afet(s, &c, t[c].d, a, tm, 0) && (* r = c,1) ? t[c].c : s ? 0 : t[c].c;
+  return afet(s, &c, t[c].d, a, tm, 0) ? (*r = a[c].d, t[*r].c) : s ? 0:t[c].c;
 }
 
 typedef struct { int i, l; } r_t; /* range used by radix tree */
 typedef struct { char * s; r_t * r; } rm_t; /* used by cmp func */
-
-int
-rm(int si, int ri, void * u) {
+typedef struct { char *s; r_t *g; t_t *t; a_t *a; int *m, *l, *n; } rp_t;
+/* packed, s: string, g: range, t: trie, a: AVL, length: g(m), t(l), a(n) */
+int /* compare when searching */
+rs(int c, int ri, void * u) { /* c: character, ri: index of range */
   char * s = ((rm_t *) u)->s; r_t * r = ((rm_t *) u)->r;
-  return s[si] - s[r[ri].i];
-}
+  return c - (r[ri].l ? s[r[ri].i] : 0);
+} /* allow empty AVL node (range length = 0) */
 
-int
-ri(int ra, int rb, void * u) {
+int /* compare when inserting */
+ri(int ra, int rb, void * u) { /* ra, rb: indice of range */
   char * s = ((rm_t *) u)->s; r_t * r = ((rm_t *) u)->r;
-  return s[r[ra].i] - s[r[rb].i];
-}
+  return s[r[ra].i] - (r[rb].l ? s[r[rb].i] : 0);
+} /* allow empty AVL node (range length = 0) */
 
-int /* insert, z: i + size(tail) */
-rins(int i, int d, char *s, r_t *g, t_t *t, a_t *a, int *m, int *l, int *n) {
+int /* insert, z: i + size(tail) TODO: no empty AVL node */
+rins(int i, int d, rp_t p) { char *s = p.s;
+  r_t *g = p.g; t_t *t = p.t; a_t *a = p.a; int *m = p.m, *l = p.l, *n = p.n;
   rm_t f[] = {s, g}; a_t * o = 0; r_t * k;
   int r = 0, b = 0, e = 0, z = i+strlen(s+i);
-  while (*s && b == e && afet(i, &r, t[r].d, a, rm, f) && (o = a+r, r = o->d))
+  while (*s && b == e && afet(s[i],&r,t[r].d,a,rs,f) && (o = a+r, r = o->d))
     for (k = g+o->k, b = k->i, e = b+k->l; b < e && s[b] == s[i]; ) b++, i++;
-  b == e && !s[i] && (t[r].c = d, 1) ||
+  b == e && !s[i] && (t[r].c = d, 1) || /* reached the trie node */
   o && (g[(*m)++] = (r_t) {b,e-b}, ains(*m-1,r,&t[*l].d,a,n,ri,f),
         g[(*m)++] = (r_t) {i,z-i}, ains(*m-1,*l+1,&t[*l].d,a,n,ri,f),
-        o->d = *l, k->l -= e-b, t[*l+1].c = d, *l += 2) ||
+        o->d = *l, k->l -= e-b, t[*l+1].c = d, *l += 2) || /* split trie */
   (t[*l].c = d, g[(*m)++] = (r_t) {i,z-i}, ains(*m-1,(*l)++,&t[r].d,a,n,ri,f));
-}
-
+} /* reached the trie root(trie[0]), insert new AVL node */
+    /* i: index of range, r: index of AVL, c: copy, x: next, d: included */
+int /* retrieve, 0 if the data does not exist or no children of included it */
+rret(char c, int *i, int *r, rp_t p) { char *s = p.s;
+  r_t *g = p.g; t_t *t = p.t; a_t *a = p.a; int *m = p.m, *l = p.l, *n = p.n;
+  rm_t f[] = {s, g}; int o = * r, x, d = (o || (*i = 0), o && *i < g[a[o].k].l);
+  return d && s[g[a[o].k].i+*i] == c && ++*i && *i == g[a[o].k].l || !d &&
+      (!c || afet(c,&o,t[a[o].d].d,a,rs,f) && (*r=o, *i=1, *i == g[a[o].k].l)) ?
+      (afet(0,&x,t[a[o].d].d,a,rs,f) ? t[a[x].d].c : t[a[o].d].c) : 0;
+} /* if included & reached last character | !included & (EOF | goto next AVL) */
+  /*   data is in this AVL node or next empty AVL node                        */
 int
 cmp(const void * a, const void * b) {
   char * x = * ((char **) a) + 2, * y = * ((char **) b) + 2;
   while (* x == * y && * x) x++, y++;
   return * x - * y;
 }
+
+#define P(func) ((d = func) ? d : '#') /* patch char */
 
 int
 main(void) {
@@ -109,23 +122,29 @@ main(void) {
   /*qsort(rhs, sizeof(char *), l, cmp);*/
   for (i = 0; i < l; i++) puts(rhs[i]);
   r_t x[100] = {0}; t_t t[100] = {0}; a_t a[100] = {0};
-  int r = 0, ar = 1, gl = 0, tl = 1, al = 1, d, mem = 0;
+  int r = 0, ar = 0, gl = 0, tl = 1, al = 1, d, mem = 0;
   /* test trie by assigning long sentances to trie */
-  char * test[] = {"romane","romanus","romulus","rubens","ruber","rubicon",
-    "rubicundus","a","too", "sdf","toa"};
-  /*
-  for (i = 0; i <= 19 && i < sizeof(test)/sizeof(*test); i++)
-    tmap(test[i], i+1, t, a, &tl, &al), mem += strlen(test[i]);
-  printf("String memory: %d\n"
-         "Used memory: [trie %zu] * %d + [AVL node %zu] * %d = %zu\n", mem,
-         sizeof(t_t), tl, sizeof(a_t), al, tl*sizeof(t_t)+al*sizeof(a_t));
-         */
-  for (i = 0; i <= 20 && i < sizeof(test)/sizeof(*test); i++)
-    rins(test[i]-*test, i+1, *test, x, t, a, &gl, &tl, &al),
-    mem += strlen(test[i]);
   /* radix tree used memory: 8*(n-g+1)+20*(n-g+1)+8*(n-g)
    * trie used memory:       8*(n+1)+20*(n+1)
    * n: number of nodes, g: number of nodes can be grouped */
+  char * test[] = {"romane","romanus","romulus","rubens","ruber","rubicon",
+    "rubicundus","a","to","too","v","vo",""};
+  rp_t p = {*test, x, t, a, &gl, &tl, &al};
+  for (i = 0; i <= 20 && i < sizeof(test)/sizeof(*test); i++)
+    rins(test[i]-*test, i+1, p), mem += strlen(test[i]);
+  printf("  has a(%d", ar);printf("): %d\n", rret('a', &i, &ar, p)), ar = 0;
+  printf("  has (%d", ar);printf("): %d\n", rret('\0', &i, &ar, p)), ar = 0;
+  printf("  has v(%d", ar);printf("): %d\n", rret('v', &i, &ar, p));
+  printf("  has v(%d", ar);printf("): %d\n", rret('\0', &i, &ar, p));
+  printf("  has v(%d", ar);printf("): %d\n", rret('\0', &i, &ar, p)), ar = 0;
+  printf("  has to(%d", ar);printf("): %d\n", rret('t', &i, &ar, p));
+  printf("  has to(%d", ar);printf("): %d\n", rret('o', &i, &ar, p));
+  printf("  has to(%d", ar);printf("): %d\n", rret('\0', &i, &ar, p));
+  printf("  has to(%d", ar);printf("): %d\n", rret('\0', &i, &ar, p)), ar = 0;
+  printf("  has too(%d", ar);printf("): %d\n", rret('t', &i, &ar, p));
+  printf("  has too(%d", ar);printf("): %d\n", rret('o', &i, &ar, p));
+  printf("  has too(%d", ar);printf("): %d\n", rret('o', &i, &ar, p));
+  printf("  has too(%d", ar);printf("): %d\n", rret('\0', &i, &ar, p)), ar = 0;
   printf("String memory: %d\n"
          "Used memory: [trie %zu] * %d + [AVL node %zu] * %d + [range node %zu]"
          " * %d = %zu\n", mem,
@@ -175,7 +194,13 @@ main(void) {
   gvRenderFilename(gvc, g, "png", "graphviz.png");
   gvFreeLayout(gvc, g);
   agclose(g);
-#define P(c) ((d = c) ? d : '#') /* patch char */
+  /*
+  for (i = 0; i <= 19 && i < sizeof(test)/sizeof(*test); i++)
+    tmap(test[i], i+1, t, a, &tl, &al), mem += strlen(test[i]);
+  printf("String memory: %d\n"
+         "Used memory: [trie %zu] * %d + [AVL node %zu] * %d = %zu\n", mem,
+         sizeof(t_t), tl, sizeof(a_t), al, tl*sizeof(t_t)+al*sizeof(a_t));
+  */
   /* test trie by map a string to a character *//*
   for (i = 0; i < l; i++) tmap(rhs[i]+2, *rhs[i], t, a, &tl, &al);
   printf("  has U(%d", r);printf("): %c\n", P(tret('U', &r, t, a)));
@@ -266,6 +291,7 @@ main(void) {
   printf("  has 9 6(%d", r);printf("): %d\n", tnex('\x06', &r, t, a)), r = 0;
   */
   /* test AVL tree *//*
+  ar = 1;
   ains(8, 9, &ar, a, &al);
   ains(3, 9, &ar, a, &al);
   ains(4, 9, &ar, a, &al);
