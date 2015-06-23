@@ -1,16 +1,14 @@
 #include <stdio.h>
 
 typedef struct {
-  int a;
-  int b;
+  int x;
+  int y;
 } foo_t;
 
 int
 main(void) {
-  int a = 1;
-  int b = 2;
-  foo_t foo;
-  foo = (foo_t) {.b = b, .a = a};
-  printf("%d %d\n", foo.a, foo.b);
+  foo_t a[] = {1, 2};
+  foo_t b[] = {{1, 2}};
+  printf("%d %d\n", a->x, b->x);
   return 0;
 }
