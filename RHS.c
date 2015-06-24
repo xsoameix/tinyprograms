@@ -69,8 +69,8 @@ tret(char s, int * r, t_t * t, a_t * a) {
 
 typedef struct { int i, l; } r_t; /* range used by radix tree */
 typedef struct { char * s; r_t * r; } rm_t; /* used by cmp func */
-typedef struct { char *s; r_t *g; t_t *t; a_t *a; int *m, *l, *n; } rp_t;
-/* packed, s: string, g: range, t: trie, a: AVL, length: g(m), t(l), a(n) */
+typedef struct { char *s; r_t *g; t_t *t; a_t *a; int m, l, n, i, r; } rp_t;
+/* packed, s: str, g: range, t: trie, a: AVL, len: g=m t=l a=n, retrieve: i,r */
 int /* compare when searching */
 rs(int c, int ri, void * u) { /* c: character, ri: index of range */
   char * s = ((rm_t *) u)->s; r_t * r = ((rm_t *) u)->r;
@@ -83,23 +83,23 @@ ri(int ra, int rb, void * u) { /* ra, rb: indice of range */
   return s[r[ra].i] - (r[rb].l ? s[r[rb].i] : 0);
 } /* allow empty AVL node (range length = 0) */
 
-int /* insert, z: i + size(tail) TODO: no empty AVL node */
-rins(int i, int d, rp_t p) { char *s = p.s;
-  r_t *g = p.g; t_t *t = p.t; a_t *a = p.a; int *m = p.m, *l = p.l, *n = p.n;
+int /* insert, z: i + size(tail) */
+rins(int i, int d, rp_t * p) { char *s = p->s; r_t *g = p->g; t_t *t = p->t;
+  a_t *a = p->a; int *m = &p->m, *l = &p->l, *n = &p->n;
   rm_t f[] = {s, g}; a_t * o = 0; r_t * k;
   int r = 0, b = 0, e = 0, z = i+strlen(s+i);
   while (*s && b == e && afet(s[i],&r,t[r].d,a,rs,f) && (o = a+r, r = o->d))
     for (k = g+o->k, b = k->i, e = b+k->l; b < e && s[b] == s[i]; ) b++, i++;
   b == e && !s[i] && (t[r].c = d, 1) || /* reached the trie node */
-  o && (g[(*m)++] = (r_t) {b,e-b}, ains(*m-1,r,&t[*l].d,a,n,ri,f),
-        g[(*m)++] = (r_t) {i,z-i}, ains(*m-1,*l+1,&t[*l].d,a,n,ri,f),
-        o->d = *l, k->l -= e-b, t[*l+1].c = d, *l += 2) || /* split trie */
+  o && e-b && (g[(*m)++] = (r_t) {b,e-b}, ains(*m-1,r,&t[*l].d,a,n,ri,f),
+               g[(*m)++] = (r_t) {i,z-i}, ains(*m-1,*l+1,&t[*l].d,a,n,ri,f),
+               o->d = *l, k->l -= e-b, t[*l+1].c = d, *l += 2) || /* fork */
   (t[*l].c = d, g[(*m)++] = (r_t) {i,z-i}, ains(*m-1,(*l)++,&t[r].d,a,n,ri,f));
 } /* reached the trie root(trie[0]), insert new AVL node */
     /* i: index of range, r: index of AVL, c: copy, x: next, d: included */
 int /* retrieve, 0 if the data does not exist or no children of included it */
-rret(char c, int *i, int *r, rp_t p) { char *s = p.s;
-  r_t *g = p.g; t_t *t = p.t; a_t *a = p.a; int *m = p.m, *l = p.l, *n = p.n;
+rret(char c, rp_t * p) { char *s = p->s; r_t *g = p->g; t_t *t = p->t;
+  a_t *a = p->a; int *m = &p->m, *l = &p->l, *n = &p->n, *i = &p->i, *r = &p->r;
   rm_t f[] = {s, g}; int o = * r, x, d = (o || (*i = 0), o && *i < g[a[o].k].l);
   return d && s[g[a[o].k].i+*i] == c && ++*i && *i == g[a[o].k].l || !d &&
       (!c || afet(c,&o,t[a[o].d].d,a,rs,f) && (*r=o, *i=1, *i == g[a[o].k].l)) ?
@@ -113,6 +113,9 @@ cmp(const void * a, const void * b) {
   return * x - * y;
 }
 
+typedef enum { RADIX_TREE, TRIE, AVL_TREE } draw_t;
+int draw(draw_t type, const char * format, rp_t p);
+
 #define P(func) ((d = func) ? d : '#') /* patch char */
 
 int
@@ -120,194 +123,150 @@ main(void) {
   char * rhs[] = {"E:U","U:T","U:U+T","T:V","V:F","V:V*F","F:i","F:(E)"};
   int i, l = sizeof(rhs)/sizeof(*rhs);
   /*qsort(rhs, sizeof(char *), l, cmp);*/
-  for (i = 0; i < l; i++) puts(rhs[i]);
-  r_t x[100] = {0}; t_t t[100] = {0}; a_t a[100] = {0};
-  int r = 0, ar = 0, gl = 0, tl = 1, al = 1, d, mem = 0;
+  /*for (i = 0; i < l; i++) puts(rhs[i]);*/
+  rp_t p = {0,(r_t[100]){0},(t_t[100]){0},(a_t[100]){0},0,1,1,0,0};
+  int r = 0, d;
   /* test trie by assigning long sentances to trie */
   /* radix tree used memory: 8*(n-g+1)+20*(n-g+1)+8*(n-g)
    * trie used memory:       8*(n+1)+20*(n+1)
-   * n: number of nodes, g: number of nodes can be grouped */
+   * n: number of nodes, g: number of nodes can be grouped *//*
   char * test[] = {"romane","romanus","romulus","rubens","ruber","rubicon",
     "rubicundus","a","to","too","v","vo",""};
-  rp_t p = {*test, x, t, a, &gl, &tl, &al};
-  for (i = 0; i <= 20 && i < sizeof(test)/sizeof(*test); i++)
-    rins(test[i]-*test, i+1, p), mem += strlen(test[i]);
-  printf("  has a(%d", ar);printf("): %d\n", rret('a', &i, &ar, p)), ar = 0;
-  printf("  has (%d", ar);printf("): %d\n", rret('\0', &i, &ar, p)), ar = 0;
-  printf("  has v(%d", ar);printf("): %d\n", rret('v', &i, &ar, p));
-  printf("  has v(%d", ar);printf("): %d\n", rret('\0', &i, &ar, p));
-  printf("  has v(%d", ar);printf("): %d\n", rret('\0', &i, &ar, p)), ar = 0;
-  printf("  has to(%d", ar);printf("): %d\n", rret('t', &i, &ar, p));
-  printf("  has to(%d", ar);printf("): %d\n", rret('o', &i, &ar, p));
-  printf("  has to(%d", ar);printf("): %d\n", rret('\0', &i, &ar, p));
-  printf("  has to(%d", ar);printf("): %d\n", rret('\0', &i, &ar, p)), ar = 0;
-  printf("  has too(%d", ar);printf("): %d\n", rret('t', &i, &ar, p));
-  printf("  has too(%d", ar);printf("): %d\n", rret('o', &i, &ar, p));
-  printf("  has too(%d", ar);printf("): %d\n", rret('o', &i, &ar, p));
-  printf("  has too(%d", ar);printf("): %d\n", rret('\0', &i, &ar, p)), ar = 0;
-  printf("String memory: %d\n"
-         "Used memory: [trie %zu] * %d + [AVL node %zu] * %d + [range node %zu]"
-         " * %d = %zu\n", mem,
-         sizeof(t_t), tl, sizeof(a_t), al, sizeof(r_t), gl,
-         tl*sizeof(t_t)+al*sizeof(a_t)+gl*sizeof(r_t));
-  Agraph_t * g = agopen("g", Agdirected, 0);
-  Agnode_t * tn[100], * an[100];
-  Agedge_t * e;
-  GVC_t * gvc = gvContext();
-  char buf[300] = {0}; int bi = 0, m;
-  agsafeset(g, "rankdir", "LR", "");
-  for (i = 0; i < tl; i++)
-    m = sprintf(buf+bi, "t%0X", i)+1,
-    tn[i] = agnode(g, buf+bi, 1), bi += m,
-    t[i].c && (m = sprintf(buf+bi, "%d", t[i].c)+1,
-               agsafeset(tn[i], "label", buf+bi, ""), bi += m) ||
-        agsafeset(tn[i], "label", "", ""),
-    agsafeset(tn[i], "colorscheme", "ylgn9", ""),
-    t[i].c && agsafeset(tn[i], "fillcolor", "4", ""),
-    agsafeset(tn[i], "shape", "rectangle", ""),
-    agsafeset(tn[i], "style", "rounded,filled", ""),
-    agsafeset(tn[i], "fixedsize", "true", ""),
-    agsafeset(tn[i], "fontname", "Sans", "");
-  for (i = 0; i < al; i++)
-    m = sprintf(buf+bi, "a%0X", i)+1,
-    an[i] = agnode(g, buf+bi, 1), bi += m,
-    m = sprintf(buf+bi, "%.*s", i ? x[a[i].k].l : 1,
-                i ? *test+x[a[i].k].i : "#")+1,
-    agsafeset(an[i], "label", buf+bi, ""), bi += m,
-    agsafeset(an[i], "fontname", "Sans", ""),
-    agsafeset(an[i], "colorscheme", "blues9", ""),
-    agsafeset(an[i], "fillcolor", "4", ""),
-    agsafeset(an[i], "style", "filled", "");
-  for (i = 0; i < tl; i++)
-    t[i].d && (e = agedge(g, tn[i], an[t[i].d], 0, 1),
-               agsafeset(e, "arrowhead", "none", ""));
-  for (i = 0; i < al; i++)
-    a[i].l && (e = agedge(g, an[i], an[a[i].l], 0, 1),
-               agsafeset(e, "colorscheme", "blues9", ""),
-               agsafeset(e, "color", "7", "")),
-    a[i].r && (e = agedge(g, an[i], an[a[i].r], 0, 1),
-               agsafeset(e, "colorscheme", "blues9", ""),
-               agsafeset(e, "color", "7", "")),
-    e = agedge(g, an[i], tn[a[i].d], 0, 1),
-    agsafeset(e, "arrowhead", "none", "");
-  gvLayout(gvc, g, "dot");
-  gvRenderFilename(gvc, g, "png", "graphviz.png");
-  gvFreeLayout(gvc, g);
-  agclose(g);
+  for (p.s = *test, i = 0; i <= 20 && i < sizeof(test)/sizeof(*test); i++)
+    rins(test[i]-*test, i+1, &p);
+  printf("  has a(%d): %d\n",   r, rret('a',  &p)), r = p.r = 0;
+  printf("  has (%d): %d\n",    r, rret('\0', &p)), r = p.r = 0;
+  printf("  has v(%d): %d\n",   r, rret('v',  &p)), r = p.r;
+  printf("  has v(%d): %d\n",   r, rret('\0', &p)), r = p.r;
+  printf("  has v(%d): %d\n",   r, rret('\0', &p)), r = p.r = 0;
+  printf("  has to(%d): %d\n",  r, rret('t',  &p)), r = p.r;
+  printf("  has to(%d): %d\n",  r, rret('o',  &p)), r = p.r;
+  printf("  has to(%d): %d\n",  r, rret('\0', &p)), r = p.r;
+  printf("  has to(%d): %d\n",  r, rret('\0', &p)), r = p.r = 0;
+  printf("  has too(%d): %d\n", r, rret('t',  &p)), r = p.r;
+  printf("  has too(%d): %d\n", r, rret('o',  &p)), r = p.r;
+  printf("  has too(%d): %d\n", r, rret('o',  &p)), r = p.r;
+  printf("  has too(%d): %d\n", r, rret('\0', &p)), r = p.r = 0;
+  draw(RADIX_TREE, "%d", p);
+  */
   /*
-  for (i = 0; i <= 19 && i < sizeof(test)/sizeof(*test); i++)
-    tmap(test[i], i+1, t, a, &tl, &al), mem += strlen(test[i]);
-  printf("String memory: %d\n"
-         "Used memory: [trie %zu] * %d + [AVL node %zu] * %d = %zu\n", mem,
-         sizeof(t_t), tl, sizeof(a_t), al, tl*sizeof(t_t)+al*sizeof(a_t));
+  for (p.s = *test, i = 0; i <= 19 && i < sizeof(test)/sizeof(*test); i++)
+    tmap(test[i], i+1, p.t, p.a, &p.l, &p.n);
+  draw(TRIE, "%d", p);
   */
   /* test trie by map a string to a character *//*
-  for (i = 0; i < l; i++) tmap(rhs[i]+2, *rhs[i], t, a, &tl, &al);
-  printf("  has U(%d", r);printf("): %c\n", P(tret('U', &r, t, a)));
-  printf("  has U(%d", r);printf("): %c\n", P(tret('\0', &r, t, a)));
-  printf("  has U(%d", r);printf("): %c\n", P(tret('\0', &r, t, a))), r = 0;
-  printf("  has U+T(%d", r);printf("): %c\n", P(tret('U', &r, t, a)));
-  printf("  has U+T(%d", r);printf("): %c\n", P(tret('+', &r, t, a)));
-  printf("  has U+T(%d", r);printf("): %c\n", P(tret('T', &r, t, a))), r = 0;
-  printf("  has UF(%d", r);printf("): %c\n", P(tret('U', &r, t, a)));
-  printf("  has UF(%d", r);printf("): %c\n", P(tret('F', &r, t, a))), r = 0;
-  printf("  has (E)(%d", r);printf("): %c\n", P(tret('(', &r, t, a)));
-  printf("  has (E)(%d", r);printf("): %c\n", P(tret('E', &r, t, a)));
-  printf("  has (E)(%d", r);printf("): %c\n", P(tret(')', &r, t, a))), r = 0;
-  printf("  has V*F(%d", r);printf("): %c\n", P(tret('V', &r, t, a)));
-  printf("  has V*F(%d", r);printf("): %c\n", P(tret('*', &r, t, a)));
-  printf("  has V*F(%d", r);printf("): %c\n", P(tret('F', &r, t, a))), r = 0;
-  printf("  has V*D(%d", r);printf("): %c\n", P(tret('V', &r, t, a)));
-  printf("  has V*D(%d", r);printf("): %c\n", P(tret('*', &r, t, a)));
-  printf("  has V*D(%d", r);printf("): %c\n", P(tret('D', &r, t, a))), r = 0;
+  for (i = 0; i < l; i++) tmap(rhs[i]+2, *rhs[i], p.t, p.a, &p.l, &p.n);
+  printf("  has U(%d): %c\n",   r, P(tret('U',  &r, p.t, p.a)));
+  printf("  has U(%d): %c\n",   r, P(tret('\0', &r, p.t, p.a)));
+  printf("  has U(%d): %c\n",   r, P(tret('\0', &r, p.t, p.a))), r = 0;
+  printf("  has U+T(%d): %c\n", r, P(tret('U',  &r, p.t, p.a)));
+  printf("  has U+T(%d): %c\n", r, P(tret('+',  &r, p.t, p.a)));
+  printf("  has U+T(%d): %c\n", r, P(tret('T',  &r, p.t, p.a))), r = 0;
+  printf("  has UF(%d): %c\n",  r, P(tret('U',  &r, p.t, p.a)));
+  printf("  has UF(%d): %c\n",  r, P(tret('F',  &r, p.t, p.a))), r = 0;
+  printf("  has (E)(%d): %c\n", r, P(tret('(',  &r, p.t, p.a)));
+  printf("  has (E)(%d): %c\n", r, P(tret('E',  &r, p.t, p.a)));
+  printf("  has (E)(%d): %c\n", r, P(tret(')',  &r, p.t, p.a))), r = 0;
+  printf("  has V*F(%d): %c\n", r, P(tret('V',  &r, p.t, p.a)));
+  printf("  has V*F(%d): %c\n", r, P(tret('*',  &r, p.t, p.a)));
+  printf("  has V*F(%d): %c\n", r, P(tret('F',  &r, p.t, p.a))), r = 0;
+  printf("  has V*D(%d): %c\n", r, P(tret('V',  &r, p.t, p.a)));
+  printf("  has V*D(%d): %c\n", r, P(tret('*',  &r, p.t, p.a)));
+  printf("  has V*D(%d): %c\n", r, P(tret('D',  &r, p.t, p.a))), r = 0;
+  draw(TRIE, "%c", p);
   */
-  /*
+  /* test trie by assigning number to trie node data *//*
+  char str[1] = {'\x00'};
+  tins(str, p.t, p.a, &p.l, &p.n);
+  tins(str, p.t, p.a, &p.l, &p.n);
+  tins(str, p.t, p.a, &p.l, &p.n);
+  tins("\x09\x08", p.t, p.a, &p.l, &p.n);
+  tins("\x09\x08", p.t, p.a, &p.l, &p.n);
+  tins(str, p.t, p.a, &p.l, &p.n);
+  tins("\x09\x06", p.t, p.a, &p.l, &p.n);
+  tins("\x09\x07", p.t, p.a, &p.l, &p.n);
+  tins("\x08\x07", p.t, p.a, &p.l, &p.n);
+  printf("  has 0(%d): %d\n",   r, tnex('\0',   &r, p.t, p.a));
+  printf("  has 8 7(%d): %d\n", r, tnex('\x08', &r, p.t, p.a));
+  printf("  has 8 7(%d): %d\n", r, tnex('\x07', &r, p.t, p.a)), r = 0;
+  printf("  has 9 9(%d): %d\n", r, tnex('\x09', &r, p.t, p.a));
+  printf("  has 9 9(%d): %d\n", r, tnex('\x09', &r, p.t, p.a)), r = 0;
+  printf("  has 9 7(%d): %d\n", r, tnex('\x09', &r, p.t, p.a));
+  printf("  has 9 7(%d): %d\n", r, tnex('\x07', &r, p.t, p.a)), r = 0;
+  printf("  has 9 8(%d): %d\n", r, tnex('\x09', &r, p.t, p.a));
+  printf("  has 9 8(%d): %d\n", r, tnex('\x08', &r, p.t, p.a)), r = 0;
+  printf("  has 9 6(%d): %d\n", r, tnex('\x09', &r, p.t, p.a));
+  printf("  has 9 6(%d): %d\n", r, tnex('\x06', &r, p.t, p.a)), r = 0;
+  */
+  /* test AVL tree */
+  ains(8, 0, &r, p.a, &p.n, tm, 0);
+  ains(3, 0, &r, p.a, &p.n, tm, 0);
+  ains(4, 0, &r, p.a, &p.n, tm, 0);
+  ains(7, 0, &r, p.a, &p.n, tm, 0);
+  ains(6, 0, &r, p.a, &p.n, tm, 0);
+  printf("  fetch 0: %d\n", afet(0, &d, r, p.a, tm, 0));
+  printf("  fetch 1: %d\n", afet(1, &d, r, p.a, tm, 0));
+  printf("  fetch 2: %d\n", afet(2, &d, r, p.a, tm, 0));
+  printf("  fetch 3: %d\n", afet(3, &d, r, p.a, tm, 0));
+  printf("  fetch 4: %d\n", afet(4, &d, r, p.a, tm, 0));
+  printf("  fetch 5: %d\n", afet(5, &d, r, p.a, tm, 0));
+  printf("  fetch 6: %d\n", afet(6, &d, r, p.a, tm, 0));
+  printf("  fetch 7: %d\n", afet(7, &d, r, p.a, tm, 0));
+  printf("  fetch 8: %d\n", afet(8, &d, r, p.a, tm, 0));
+  printf("  fetch 9: %d\n", afet(9, &d, r, p.a, tm, 0));
+  draw(AVL_TREE, "%d", p);
+  return 0;
+}
+
+int draw(draw_t type, const char * format, rp_t p) {
+  printf("Used memory: [trie %zu] * %d + [AVL node %zu] * %d = %zu\n",
+         sizeof(t_t), p.m, sizeof(a_t), p.l, p.m*sizeof(t_t)+p.n*sizeof(a_t));
   Agraph_t * g = agopen("g", Agdirected, 0);
   Agnode_t * tn[100], * an[100];
   Agedge_t * e;
   GVC_t * gvc = gvContext();
-  char buf[900] = {0}; int bi = 0, m;
+  char buf[900] = {0}; int i, bi = 0, m, d;
   agsafeset(g, "rankdir", "LR", "");
-  for (i = 0; i < tl; i++)
+  for (i = 0; type != AVL_TREE && i < p.l; i++)
     m = sprintf(buf+bi, "t%0X", i)+1,
     tn[i] = agnode(g, buf+bi, 1), bi += m,
-    t[i].c && (m = sprintf(buf+bi, "%c", t[i].c)+1,
-               agsafeset(tn[i], "label", buf+bi, ""), bi += m) ||
-        agsafeset(tn[i], "label", "", ""),
+    type == RADIX_TREE || type == TRIE && (
+        p.t[i].c && (m = sprintf(buf+bi, format, p.t[i].c)+1,
+                     agsafeset(tn[i], "label", buf+bi, ""), bi += m) ||
+        agsafeset(tn[i], "label", "", "")),
     agsafeset(tn[i], "colorscheme", "ylgn9", ""),
-    t[i].c && agsafeset(tn[i], "fillcolor", "4", ""),
+    p.t[i].c && agsafeset(tn[i], "fillcolor", "4", ""),
     agsafeset(tn[i], "shape", "rectangle", ""),
     agsafeset(tn[i], "style", "rounded,filled", ""),
     agsafeset(tn[i], "fixedsize", "true", ""),
     agsafeset(tn[i], "fontname", "Sans", "");
-  for (i = 0; i < al; i++)
+  for (i = 0; i < p.n; i++)
     m = sprintf(buf+bi, "a%0X", i)+1,
     an[i] = agnode(g, buf+bi, 1), bi += m,
-    m = sprintf(buf+bi, "%c", a[i].k ? a[i].k : '#')+1,
+    type == RADIX_TREE && (m = sprintf(buf+bi, "%.*s", i ? p.g[p.a[i].k].l : 1,
+                                       i ? p.s+p.g[p.a[i].k].i : "#")+1),
+    type == TRIE && (m = sprintf(buf+bi, "%c", P(p.a[i].k))+1),
+    type == AVL_TREE && (m = sprintf(buf+bi, "%d", p.a[i].k)),
     agsafeset(an[i], "label", buf+bi, ""), bi += m,
     agsafeset(an[i], "shape", "circle", ""),
     agsafeset(an[i], "fontname", "Sans", ""),
     agsafeset(an[i], "colorscheme", "blues9", ""),
     agsafeset(an[i], "fillcolor", "4", ""),
     agsafeset(an[i], "style", "filled", "");
-  for (i = 0; i < tl; i++)
-    t[i].d && (e = agedge(g, tn[i], an[t[i].d], 0, 1),
-               agsafeset(e, "arrowhead", "none", ""));
-  for (i = 0; i < al; i++)
-    a[i].l && (e = agedge(g, an[i], an[a[i].l], 0, 1),
-               agsafeset(e, "colorscheme", "blues9", ""),
-               agsafeset(e, "color", "7", "")),
-    a[i].r && (e = agedge(g, an[i], an[a[i].r], 0, 1),
-               agsafeset(e, "colorscheme", "blues9", ""),
-               agsafeset(e, "color", "7", "")),
-    e = agedge(g, an[i], tn[a[i].d], 0, 1),
-    agsafeset(e, "arrowhead", "none", "");
+  for (i = 0; i < p.l; i++)
+    p.t[i].d && (e = agedge(g, tn[i], an[p.t[i].d], 0, 1),
+                 agsafeset(e, "arrowhead", "none", ""));
+  for (i = 0; i < p.n; i++)
+    p.a[i].l && (e = agedge(g, an[i], an[p.a[i].l], 0, 1),
+                 agsafeset(e, "colorscheme", "blues9", ""),
+                 agsafeset(e, "color", "7", "")),
+    p.a[i].r && (e = agedge(g, an[i], an[p.a[i].r], 0, 1),
+                 agsafeset(e, "colorscheme", "blues9", ""),
+                 agsafeset(e, "color", "7", "")),
+    type != AVL_TREE && (e = agedge(g, an[i], tn[p.a[i].d], 0, 1),
+                         agsafeset(e, "arrowhead", "none", ""));
   gvLayout(gvc, g, "dot");
   gvRenderFilename(gvc, g, "png", "graphviz.png");
   gvFreeLayout(gvc, g);
   agclose(g);
-  */
-  /* test trie by assigning number to trie node data *//*
-  char str[1] = {'\x00'};
-  tins(str, t, a, &tl, &al);
-  tins(str, t, a, &tl, &al);
-  tins(str, t, a, &tl, &al);
-  tins("\x09\x08", t, a, &tl, &al);
-  tins("\x09\x08", t, a, &tl, &al);
-  tins(str, t, a, &tl, &al);
-  tins("\x09\x06", t, a, &tl, &al);
-  tins("\x09\x07", t, a, &tl, &al);
-  tins("\x08\x07", t, a, &tl, &al);
-  printf("  has 0(%d", r);printf("): %d\n", tnex('\0', &r, t, a));
-  printf("  has 8 7(%d", r);printf("): %d\n", tnex('\x08', &r, t, a));
-  printf("  has 8 7(%d", r);printf("): %d\n", tnex('\x07', &r, t, a)), r = 0;
-  printf("  has 9 9(%d", r);printf("): %d\n", tnex('\x09', &r, t, a));
-  printf("  has 9 9(%d", r);printf("): %d\n", tnex('\x09', &r, t, a)), r = 0;
-  printf("  has 9 7(%d", r);printf("): %d\n", tnex('\x09', &r, t, a));
-  printf("  has 9 7(%d", r);printf("): %d\n", tnex('\x07', &r, t, a)), r = 0;
-  printf("  has 9 8(%d", r);printf("): %d\n", tnex('\x09', &r, t, a));
-  printf("  has 9 8(%d", r);printf("): %d\n", tnex('\x08', &r, t, a)), r = 0;
-  printf("  has 9 6(%d", r);printf("): %d\n", tnex('\x09', &r, t, a));
-  printf("  has 9 6(%d", r);printf("): %d\n", tnex('\x06', &r, t, a)), r = 0;
-  */
-  /* test AVL tree *//*
-  ar = 1;
-  ains(8, 9, &ar, a, &al);
-  ains(3, 9, &ar, a, &al);
-  ains(4, 9, &ar, a, &al);
-  ains(5, 9, &ar, a, &al);
-  ains(7, 9, &ar, a, &al);
-  ains(6, 9, &ar, a, &al);
-  printf("  fetch 0: %d\n", afet(0, &d, ar, a));
-  printf("  fetch 1: %d\n", afet(1, &d, ar, a));
-  printf("  fetch 2: %d\n", afet(2, &d, ar, a));
-  printf("  fetch 3: %d\n", afet(3, &d, ar, a));
-  printf("  fetch 4: %d\n", afet(4, &d, ar, a));
-  printf("  fetch 5: %d\n", afet(5, &d, ar, a));
-  printf("  fetch 6: %d\n", afet(6, &d, ar, a));
-  printf("  fetch 7: %d\n", afet(7, &d, ar, a));
-  printf("  fetch 8: %d\n", afet(8, &d, ar, a));
-  printf("  fetch 9: %d\n", afet(9, &d, ar, a));
-  */
-  return 0;
 }
