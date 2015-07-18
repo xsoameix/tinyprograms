@@ -31,18 +31,18 @@
             <td class="headerValue">datrie.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntry">368</td>
-            <td class="headerCovTableEntry">456</td>
-            <td class="headerCovTableEntryMed">80.7 %</td>
+            <td class="headerCovTableEntry">379</td>
+            <td class="headerCovTableEntry">468</td>
+            <td class="headerCovTableEntryMed">81.0 %</td>
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-07-17</td>
+            <td class="headerValue">2015-07-18</td>
             <td></td>
             <td class="headerItem">Functions:</td>
-            <td class="headerCovTableEntry">48</td>
-            <td class="headerCovTableEntry">59</td>
-            <td class="headerCovTableEntryMed">81.4 %</td>
+            <td class="headerCovTableEntry">49</td>
+            <td class="headerCovTableEntry">60</td>
+            <td class="headerCovTableEntryMed">81.7 %</td>
           </tr>
           <tr><td><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
         </table>
@@ -73,717 +73,737 @@
 <span class="lineNum">      11 </span>            : 
 <span class="lineNum">      12 </span>            : typedef int dl_t; /* sizeof(dl_t) is normally &gt;= sizeof(dt_t) */
 <span class="lineNum">      13 </span>            : typedef struct { dl_t b, c; } d_t;
-<span class="lineNum">      14 </span>            : typedef unsigned char dt_t; /*  char is used as texts (ascii) or binary (utf8)
-<span class="lineNum">      15 </span>            :                              * short is used as unicode point */
-<span class="lineNum">      16 </span>            : #define DS sizeof(d_t)
-<span class="lineNum">      17 </span>            : #define DT sizeof(dt_t)
-<span class="lineNum">      18 </span>            : #define DX SMAXT(dl_t)
-<span class="lineNum">      19 </span>            : #define DM UMAXT(dt_t)
-<a name="20"><span class="lineNum">      20 </span>            : </a>
-<span class="lineNum">      21 </span>            : d_t *
-<span class="lineNum">      22 </span><span class="lineCov">         23 : dini(dl_t l) {</span>
-<span class="lineNum">      23 </span><span class="lineCov">         23 :   if (!l) return 0;</span>
-<span class="lineNum">      24 </span><span class="lineCov">         22 :   d_t * d = malloc(l*DS+DS); dl_t i;</span>
-<span class="lineNum">      25 </span><span class="lineCov">         22 :   for (d[0] = (d_t){0,-1}, i = 1; d[i] = (d_t){i-1,-i-1}, i != l; i++);</span>
-<span class="lineNum">      26 </span><span class="lineCov">         22 :   return d[1].b = l, d[l].c = -1, d;</span>
-<span class="lineNum">      27 </span>            : }
-<a name="28"><span class="lineNum">      28 </span>            : </a>
-<span class="lineNum">      29 </span>            : int
-<span class="lineNum">      30 </span><span class="lineCov">         16 : drea(d_t ** d, dl_t * l) {</span>
-<span class="lineNum">      31 </span><span class="lineCov">         16 :   dl_t i, b = *l, e, f, m; d_t * n = *d;</span>
-<span class="lineNum">      32 </span><span class="lineCov">         16 :   if (b &gt; DX - b || !(e = b*2+1, i = ++b)) return 1; /* len is max */</span>
-<span class="lineNum">      33 </span><span class="lineCov">         16 :   if (!(n = realloc(n, DS*(*l = e)+DS))) return 2; /* realloc error */</span>
-<span class="lineNum">      34 </span><span class="lineCov">         16 :   for (*d = n, f = n-&gt;c; n[i] = (d_t){i-1,-i-1}, i != e; i++);</span>
-<span class="lineNum">      35 </span><span class="lineCov">         16 :   m = f ? (n[n[b].b = n[-f].b].c = -b, -f) : (n-&gt;c = -b, b);</span>
-<span class="lineNum">      36 </span><span class="lineCov">         16 :   n[n[m].b = e].c = -m;</span>
-<span class="lineNum">      37 </span><span class="lineCov">         16 :   return 0;</span>
-<span class="lineNum">      38 </span>            : }
-<a name="39"><span class="lineNum">      39 </span>            : </a>
-<span class="lineNum">      40 </span>            : int
-<span class="lineNum">      41 </span><span class="lineNoCov">          0 : dbas(dl_t * a, dl_t n, d_t ** d, dl_t * l) {</span>
-<span class="lineNum">      42 </span><span class="lineNoCov">          0 :   int e = 0; dl_t i = 0, j = 1, w;</span>
-<span class="lineNum">      43 </span><span class="lineNoCov">          0 :   for (; (-i[*d].c &gt; i || !(e=drea(d,l))) &amp;&amp; (i = -i[*d].c) &lt; a[0];);</span>
-<span class="lineNum">      44 </span><span class="lineNoCov">          0 :   for (; !e &amp; j &lt; n &amp;&amp; (-i[*d].c &gt; i || !(e=drea(d,l))); j&lt;n &amp;&amp;(i=-i[*d].c))</span>
-<span class="lineNum">      45 </span><span class="lineNoCov">          0 :     for (j = 1; j &lt; n; j++) {</span>
-<span class="lineNum">      46 </span><span class="lineNoCov">          0 :       for (w = a[j]-a[0]; w &gt; *l-i;) if (e = drea(d, l)) return -e;</span>
-<span class="lineNum">      47 </span><span class="lineNoCov">          0 :       if ((*d)[i+w].c &gt;= 0) break;</span>
-<span class="lineNum">      48 </span>            :     }
-<span class="lineNum">      49 </span><span class="lineNoCov">          0 :   return e ? -e : i-a[0];</span>
-<span class="lineNum">      50 </span>            : }
-<a name="51"><span class="lineNum">      51 </span>            : </a>
-<span class="lineNum">      52 </span>            : int /* more fast */
-<span class="lineNum">      53 </span><span class="lineCov">         15 : dBas(dl_t * a, dl_t n, d_t ** d, dl_t * l) {</span>
-<span class="lineNum">      54 </span><span class="lineCov">         15 :   int e = 0; dl_t i = 0, j, b, w;</span>
-<span class="lineNum">      55 </span>            :   for (;;) {
-<span class="lineNum">      56 </span><span class="lineCov">         25 :     if (-i[*d].c &lt;= i &amp;&amp; (e = drea(d,l))) return -e;</span>
-<span class="lineNum">      57 </span><span class="lineCov">         25 :     if ((b = (i = -i[*d].c) - a[0]) &gt;= 0) if (n == 1) return b; else break;</span>
-<span class="lineNum">      58 </span>            :   }
-<span class="lineNum">      59 </span><span class="lineCov">          4 :   for (;; b = (i = -i[*d].c) - a[0]) {</span>
-<span class="lineNum">      60 </span><span class="lineCov">         12 :     if (-i[*d].c &lt;= i &amp;&amp; (e = drea(d,l))) return -e;</span>
-<span class="lineNum">      61 </span>            :     for (j = 1;;) {
-<span class="lineNum">      62 </span><span class="lineCov">         14 :       for (w = a[j]; w &gt; *l-b;) if (e = drea(d, l)) return -e;</span>
-<span class="lineNum">      63 </span><span class="lineCov">         14 :       if ((*d)[b+w].c &gt;= 0) break;</span>
-<span class="lineNum">      64 </span><span class="lineCov">         10 :       if (++j == n) return b;</span>
-<span class="lineNum">      65 </span>            :     }
-<span class="lineNum">      66 </span><span class="lineCov">          4 :   }</span>
-<span class="lineNum">      67 </span>            : }
-<a name="68"><span class="lineNum">      68 </span>            : </a>
-<span class="lineNum">      69 </span>            : void
-<span class="lineNum">      70 </span><span class="lineCov">         11 : drel(dl_t s, dl_t b, dl_t nb, dl_t * a, dl_t n, d_t * d, dl_t l) {</span>
-<span class="lineNum">      71 </span><span class="lineCov">         11 :   dl_t i, j = 0, m, c, t, u, kb, k, p, h, e, x; /* e: end, x: max size */</span>
-<span class="lineNum">      72 </span><span class="lineCov">         27 :   for (d[s].b = nb, i = 0; i &lt; n; i++) {</span>
-<span class="lineNum">      73 </span><span class="lineCov">         16 :     t = b + (c = a[i]), u = nb + c, d[p = d[u].b].c = k = d[u].c, d[-k].b = p,</span>
-<span class="lineNum">      74 </span><span class="lineCov">         16 :     p &gt; u &amp;&amp; (d-&gt;c = k) || p == u &amp;&amp; (d-&gt;c = 0), d[u] = (d_t){kb = d[t].b,s};</span>
-<span class="lineNum">      75 </span><span class="lineCov">         16 :     for (; (k = -d[j].c) &gt; j &amp;&amp; k &lt; t; j = k);</span>
-<span class="lineNum">      76 </span><span class="lineCov">         16 :     if (j) d[d[k].b = t] = (d_t){j,-k}, d[j].c = -t;</span>
-<span class="lineNum">      77 </span><span class="lineCov">          5 :     else if (k) d[e = d[k].b, d[k].b = t] = (d_t){e,-k}, d[e].c = d-&gt;c = -t;</span>
-<span class="lineNum">      78 </span><span class="lineCov">          2 :     else d[t] = (d_t){t,d-&gt;c = -t};</span>
-<span class="lineNum">      79 </span><span class="lineCov">        618 :     if (j = t, kb &gt;= 0) for (x = DM + (DX &gt; DM), m = 1; d[h = kb+m].c == t &amp;&amp;</span>
-<span class="lineNum">      80 </span><span class="lineCov">        303 :                              (d[h].c = u), m != x &amp;&amp; h != l; m++);</span>
-<span class="lineNum">      81 </span>            :   }
-<span class="lineNum">      82 </span><span class="lineCov">         11 : }</span>
-<a name="83"><span class="lineNum">      83 </span>            : </a>
-<span class="lineNum">      84 </span>            : dt_t *
-<span class="lineNum">      85 </span><span class="lineCov">         12 : dinl(dl_t c) { return calloc(DT, c); }</span>
-<a name="86"><span class="lineNum">      86 </span>            : </a>
-<span class="lineNum">      87 </span>            : int
-<span class="lineNum">      88 </span><span class="lineCov">         18 : dral(dt_t ** t, dl_t * c) {</span>
-<span class="lineNum">      89 </span><span class="lineCov">         18 :   dt_t * n; dl_t b = *c, e;</span>
-<span class="lineNum">      90 </span><span class="lineCov">         18 :   if (*c &gt; DX - *c) return 3; /* no enough space to add tail */</span>
-<span class="lineNum">      91 </span><span class="lineCov">         18 :   if (n = realloc(*t, DT*(e = *c&lt;&lt;=1))) *t = n; else return 2;</span>
-<span class="lineNum">      92 </span><span class="lineCov">         18 :   for (; b &lt; e; b++) n[b] = 0;</span>
-<span class="lineNum">      93 </span>            :   return 0;
-<span class="lineNum">      94 </span>            : }
-<span class="lineNum">      95 </span>            : 
-<span class="lineNum">      96 </span>            : #define DBAS(a, n) do {if ((nb = dBas(a,n,&amp;d,l))&lt;0) return -nb;*rd = d;}while(0)
-<span class="lineNum">      97 </span>            : #define DJMP(nb, tc) t = nb + tc, d[p = d[t].b].c = k = d[t].c, d[-k].b = p, \
-<span class="lineNum">      98 </span>            :                      p &gt; t &amp;&amp; (d-&gt;c = k) || p == t &amp;&amp; (d-&gt;c = 0), d[t].c = s
-<span class="lineNum">      99 </span>            : #define DSTR(a, n) do { for (x += y, j = 0; j &lt; n &amp;&amp; (j[x] = j[a] + 1); j++); \
-<span class="lineNum">     100 </span>            :                         *vl += n+1, d[t].b = ~y; } while(0)
-<a name="101"><span class="lineNum">     101 </span>            : </a>
-<span class="lineNum">     102 </span>            : int /* v: tail, u: max */
-<span class="lineNum">     103 </span><span class="lineCov">         22 : dins(dt_t * a, dl_t n, d_t ** rd, dl_t * l, dt_t ** v, dl_t * vl, dl_t * vc) {</span>
-<span class="lineNum">     104 </span>            :   dl_t i,j,s,c,tc,b,nb,t,k,m,p, y,w, h,h1[DM],h2[DM],l1,l2,li, *z, u;
-<span class="lineNum">     105 </span>            :   d_t *d; int e; dt_t *x;
-<span class="lineNum">     106 </span><span class="lineCov">         22 :   for (i = 0, s = 0, x = *v, y = *vl, d = *rd;;) {</span>
-<span class="lineNum">     107 </span><span class="lineCov">         34 :     if (i == n) return 4; /* the inserted key is a prefix or duplicated */</span>
-<span class="lineNum">     108 </span><span class="lineCov">         32 :     if (c = a[i++] + 1, (b = d[s].b) &lt; 0) { /* a[i](signed) should &lt; DM */</span>
-<span class="lineNum">     109 </span><span class="lineCov">          6 :       for (tc = x[j = ~b, j++]; c == tc; tc = x[j++], c = a[i++] + 1) {</span>
-<span class="lineNum">     110 </span><span class="lineCov">          2 :         z = (dl_t[]){c}; DBAS(z, 1); d[s].b = nb, DJMP(nb, c), s = t;</span>
-<span class="lineNum">     111 </span><span class="lineCov">          2 :         if (i == n) return 4;</span>
-<span class="lineNum">     112 </span>            :       }
-<span class="lineNum">     113 </span><span class="lineCov">          4 :       for (w = n-i; y &gt;= *vc - w;) if (e = dral(v,vc), x=*v, e) return e;</span>
-<span class="lineNum">     114 </span><span class="lineCov">          4 :       if (tc) { z = (dl_t[]){tc,c}; DBAS(z, 2); DJMP(nb, tc), d[t].b = ~j; }</span>
-<span class="lineNum">     115 </span><span class="lineCov">          2 :       else    { z = (dl_t[]){c};    DBAS(z, 1); }</span>
-<span class="lineNum">     116 </span><span class="lineCov">          4 :       d[s].b = nb, DJMP(nb, c); a += i; DSTR(a, w); return 0;</span>
-<span class="lineNum">     117 </span>            :     }
-<span class="lineNum">     118 </span><span class="lineCov">         10 :     while (c &gt; *l-b) if (e = drea(rd, l), d = *rd, e) return -e;</span>
-<span class="lineNum">     119 </span><span class="lineCov">         27 :     if ((k = d[t = b + c].c) != s) {</span>
-<span class="lineNum">     120 </span><span class="lineCov">         15 :       for (w = n-i; y &gt;= *vc - w;) if (e = dral(v,vc), x=*v, e) return e;</span>
-<span class="lineNum">     121 </span><span class="lineCov">         15 :       if (k &gt;= 0 &amp;&amp; (u = DM + (DX &gt; DM))) {</span>
-<span class="lineNum">     122 </span><span class="lineCov">         58 :         for (l1 = 0, j = 1; (d[h = b+j].c == s || j == c &amp;&amp; (li = l1, 1)) &amp;&amp;</span>
-<span class="lineNum">     123 </span><span class="lineCov">         34 :              (h1[l1++] = j), j != u &amp;&amp; h != *l; j++);</span>
-<span class="lineNum">     124 </span><span class="lineCov">         55 :         for (l2 = 0, j = 1, m = d[k].b; d[h = m+j].c == k &amp;&amp; (h2[l2++] = j),</span>
-<span class="lineNum">     125 </span><span class="lineCov">         49 :              j != u &amp;&amp; h != *l; j++);</span>
-<span class="lineNum">     126 </span><span class="lineCov">          3 :         if (l1 &lt;= l2) {</span>
-<span class="lineNum">     127 </span><span class="lineCov">          1 :           DBAS(h1, l1);</span>
-<span class="lineNum">     128 </span><span class="lineCov">          1 :           for (j = li+1; j &lt; l1; j++) h1[j-1] = h1[j];</span>
-<span class="lineNum">     129 </span><span class="lineCov">          1 :           drel(s, b, nb, h1, --l1, d, *l), b = nb;</span>
-<span class="lineNum">     130 </span>            :         } else {
-<span class="lineNum">     131 </span><span class="lineCov">          2 :           DBAS(h2, l2);</span>
-<span class="lineNum">     132 </span><span class="lineCov">          2 :           drel(k, m, nb, h2, l2, d, *l), s = d[b+(h1[0] == c ? h1[1]:h1[0])].c;</span>
-<span class="lineNum">     133 </span>            :         }
-<span class="lineNum">     134 </span>            :       }
-<span class="lineNum">     135 </span><span class="lineCov">         15 :       DJMP(b, c), a += i; DSTR(a, w); return 0;</span>
-<span class="lineNum">     136 </span>            :     }
-<span class="lineNum">     137 </span>            :     s = t;
-<span class="lineNum">     138 </span>            :   }
-<span class="lineNum">     139 </span>            : }
-<a name="140"><span class="lineNum">     140 </span>            : </a>
-<span class="lineNum">     141 </span>            : int
-<span class="lineNum">     142 </span><span class="lineCov">         13 : dlok(dt_t * a, dl_t n, d_t * d, dl_t l, dt_t * v) {</span>
-<span class="lineNum">     143 </span><span class="lineCov">         13 :   dl_t i = 0, j, s = 0, c, b, t;</span>
-<span class="lineNum">     144 </span>            :   for (;; s = t) {
-<span class="lineNum">     145 </span><span class="lineCov">         37 :     if ((b = d[s].b) &lt; 0) for (v += ~b, a += i, n -= i, j = 0;; j++)</span>
-<span class="lineNum">     146 </span><span class="lineCov">         21 :       if (j == n) return v[n] != 0; else if (v[j] != a[j] + 1) return 1;</span>
-<span class="lineNum">     147 </span><span class="lineCov">         11 :     if (i == n) return 1;</span>
-<span class="lineNum">     148 </span><span class="lineCov">         15 :     if ((c = a[i++] + 1) &gt; l-b) return 2;  /* a[i](signed) should &lt; DM */</span>
-<span class="lineNum">     149 </span><span class="lineCov">         14 :     if (d[t = b + c].c != s) return 1;</span>
-<span class="lineNum">     150 </span>            :   }
-<span class="lineNum">     151 </span>            : }
-<span class="lineNum">     152 </span>            : 
-<span class="lineNum">     153 </span>            : const char * const DR[] = {&quot;success&quot;, &quot;len is max&quot;, &quot;realloc err&quot;,
-<span class="lineNum">     154 </span>            :   &quot;no enough space to add tail&quot;, &quot;the inserted key is a prefix or duplicated&quot;};
-<a name="155"><span class="lineNum">     155 </span>            : </a>
-<span class="lineNum">     156 </span>            : int
-<span class="lineNum">     157 </span><span class="lineNoCov">          0 : wda(FILE * f, char * s, d_t * d, dl_t l) {</span>
-<span class="lineNum">     158 </span>            :   int j, k;
-<span class="lineNum">     159 </span><span class="lineNoCov">          0 :   for (s &amp;&amp; puts(s), j = 0;;) {</span>
-<span class="lineNum">     160 </span><span class="lineNoCov">          0 :     for (k = 0; fprintf(f, &quot;%5d&quot;, j+k), k &lt; 31 &amp;&amp; j+k &lt; l; k++); fputc('\n', f);</span>
-<span class="lineNum">     161 </span><span class="lineNoCov">          0 :     for (k = 0; fprintf(f, &quot;-----&quot;), k &lt; 31 &amp;&amp; j+k &lt; l; k++); fputc('\n', f);</span>
-<span class="lineNum">     162 </span><span class="lineNoCov">          0 :     for (k = 0; fprintf(f, &quot;%5d&quot;, d[j+k].b), k &lt; 31 &amp;&amp; j+k &lt; l; k++);</span>
-<span class="lineNum">     163 </span><span class="lineNoCov">          0 :     fputc('\n', f);</span>
-<span class="lineNum">     164 </span><span class="lineNoCov">          0 :     for (k = 0; fprintf(f, &quot;%5d&quot;, d[j+k].c), k &lt; 31 &amp;&amp; j+k &lt; l; k++);</span>
-<span class="lineNum">     165 </span><span class="lineNoCov">          0 :     fputc('\n', f), fputc('\n', f);</span>
-<span class="lineNum">     166 </span><span class="lineNoCov">          0 :     if ((j+=k+1)-1 == l) break;</span>
-<span class="lineNum">     167 </span>            :   }
-<span class="lineNum">     168 </span><span class="lineNoCov">          0 : }</span>
-<a name="169"><span class="lineNum">     169 </span>            : </a>
-<span class="lineNum">     170 </span>            : int
-<span class="lineNum">     171 </span><span class="lineNoCov">          0 : fda(char * s, d_t * d, dl_t l) {</span>
-<span class="lineNum">     172 </span><span class="lineNoCov">          0 :   FILE * f = fopen(s, &quot;w&quot;); wda(f, 0, d, l), fclose(f);</span>
-<span class="lineNum">     173 </span><span class="lineNoCov">          0 : }</span>
-<a name="174"><span class="lineNum">     174 </span>            : </a>
-<span class="lineNum">     175 </span>            : int
-<span class="lineNum">     176 </span><span class="lineNoCov">          0 : pda(char * s, d_t * d, dl_t l) { wda(stdout, s, d, l); return 0; }</span>
-<span class="lineNum">     177 </span>            : 
-<span class="lineNum">     178 </span>            : #define DL(a) (sizeof(a)/sizeof(*a))
-<span class="lineNum">     179 </span>            : #define GOOD &quot;\e[1;32mgood\e[0m&quot;
-<span class="lineNum">     180 </span>            : #define BAD &quot;\e[1;31mbad\e[0m&quot;
-<a name="181"><span class="lineNum">     181 </span>            : </a>
-<span class="lineNum">     182 </span>            : int /* r: return, e: expected, m: message */
-<span class="lineNum">     183 </span><span class="lineCov">         31 : test(int r, int e, const char * m) {</span>
-<span class="lineNum">     184 </span><span class="lineCov">         31 :   if (r == e) {</span>
-<span class="lineNum">     185 </span><span class="lineCov">         26 :     printf(&quot;  &quot;GOOD); return 0;</span>
-<span class="lineNum">     186 </span>            :   } else {
-<span class="lineNum">     187 </span><span class="lineCov">         10 :     printf(&quot;\n  &quot;BAD), m &amp;&amp; printf(&quot;  %s&quot;, m) ||</span>
-<span class="lineNum">     188 </span>            :     printf(&quot;  %d should eq %d&quot;, r, e); return 1;
-<span class="lineNum">     189 </span>            :   }
-<span class="lineNum">     190 </span>            : }
-<span class="lineNum">     191 </span>            : 
-<span class="lineNum">     192 </span>            : void
-<span class="lineNum">     193 </span><span class="lineCov">         22 : test_dcmp(d_t * a, dl_t al, d_t * b, dl_t bl) {</span>
-<span class="lineNum">     194 </span><span class="lineCov">         22 :   int e = 1; dl_t i;</span>
-<span class="lineNum">     195 </span><span class="lineCov">         22 :   if (al == bl)</span>
-<span class="lineNum">     196 </span><span class="lineCov">        381 :     for (i = 0; ; i++) {</span>
-<span class="lineNum">     197 </span><span class="lineCov">        403 :       if (a[i].b != b[i].b || a[i].c != b[i].c) {</span>
-<span class="lineNum">     198 </span>            :         e = 0;
-<span class="lineNum">     199 </span>            :         break;
-<span class="lineNum">     200 </span>            :       }
-<span class="lineNum">     201 </span><span class="lineCov">        403 :       if (i == al) break;</span>
-<span class="lineNum">     202 </span><span class="lineCov">        381 :     }</span>
-<span class="lineNum">     203 </span>            :   else e = 0;
-<span class="lineNum">     204 </span><span class="lineCov">         44 :   e &amp;&amp; printf(&quot;  &quot;GOOD) || (pda(&quot;\n  &quot;BAD, a, al), pda(&quot;\n  should eq&quot;, b, bl));</span>
-<span class="lineNum">     205 </span><span class="lineCov">         22 : }</span>
-<a name="206"><span class="lineNum">     206 </span>            : </a>
-<span class="lineNum">     207 </span>            : void
-<span class="lineNum">     208 </span><span class="lineCov">          1 : test_dini1(void) {</span>
-<span class="lineNum">     209 </span><span class="lineCov">          1 :   dl_t l = 0; d_t * d = dini(l);</span>
-<span class="lineNum">     210 </span>            :   printf(&quot;test dini: cannot init with len = 0&quot;);
-<span class="lineNum">     211 </span><span class="lineCov">          1 :   test(d == 0, 1, &quot;the pointer of double array should eq 0&quot;), puts(&quot;&quot;);</span>
-<span class="lineNum">     212 </span><span class="lineCov">          1 : }</span>
-<a name="213"><span class="lineNum">     213 </span>            : </a>
-<span class="lineNum">     214 </span>            : void
-<span class="lineNum">     215 </span><span class="lineCov">          1 : test_dini2(void) {</span>
-<span class="lineNum">     216 </span><span class="lineCov">          1 :   dl_t l = 1; d_t * d = dini(l), e[] = {{0,-1},{1,-1}};</span>
-<span class="lineNum">     217 </span>            :   printf(&quot;test dini: can init with len &gt;= 1&quot;);
-<span class="lineNum">     218 </span><span class="lineCov">          1 :   test_dcmp(d, l, e, DL(e)-1), free(d), puts(&quot;&quot;);</span>
-<span class="lineNum">     219 </span><span class="lineCov">          1 : }</span>
-<a name="220"><span class="lineNum">     220 </span>            : </a>
-<span class="lineNum">     221 </span>            : void
-<span class="lineNum">     222 </span><span class="lineCov">          1 : test_drea1(void) {</span>
-<span class="lineNum">     223 </span><span class="lineCov">          1 :   dl_t l = 1; d_t * d = dini(l), e[] = {{0,-1},{3,-2},{1,-3},{2,-1}};</span>
-<span class="lineNum">     224 </span><span class="lineCov">          1 :   printf(&quot;test drea: no cells occupied&quot;), drea(&amp;d, &amp;l);</span>
-<span class="lineNum">     225 </span><span class="lineCov">          1 :   test_dcmp(d, l, e, DL(e)-1), free(d), puts(&quot;&quot;);</span>
-<span class="lineNum">     226 </span><span class="lineCov">          1 : }</span>
-<a name="227"><span class="lineNum">     227 </span>            : </a>
-<span class="lineNum">     228 </span>            : void
-<span class="lineNum">     229 </span><span class="lineCov">          1 : test_drea2(void) {</span>
-<span class="lineNum">     230 </span><span class="lineCov">          1 :   dl_t l = 3; d_t * d = dini(l), e[] = {{0,-1},{7,-2},{1,-4},{0,0},</span>
-<span class="lineNum">     231 </span>            :     {2,-5},{4,-6},{5,-7},{6,-1}};
-<span class="lineNum">     232 </span><span class="lineCov">          1 :   printf(&quot;test drea: last cell occupied&quot;), d[1].b = 2, d[3] = (d_t){0,0};</span>
-<span class="lineNum">     233 </span><span class="lineCov">          1 :   drea(&amp;d, &amp;l), test_dcmp(d, l, e, DL(e)-1), free(d), puts(&quot;&quot;);</span>
-<span class="lineNum">     234 </span><span class="lineCov">          1 : }</span>
-<a name="235"><span class="lineNum">     235 </span>            : </a>
-<span class="lineNum">     236 </span>            : void
-<span class="lineNum">     237 </span><span class="lineCov">          1 : test_drea3(void) {</span>
-<span class="lineNum">     238 </span><span class="lineCov">          1 :   dl_t l = 1; d_t * d = dini(l), e[] = {{0,-2},{0,0},{3,-3},{2,-2}};</span>
-<span class="lineNum">     239 </span><span class="lineCov">          1 :   printf(&quot;test drea: all cells occupied&quot;), d[0].c = 0, d[1] = (d_t){0,0};</span>
-<span class="lineNum">     240 </span><span class="lineCov">          1 :   drea(&amp;d, &amp;l), test_dcmp(d, l, e, DL(e)-1), free(d), puts(&quot;&quot;);</span>
-<span class="lineNum">     241 </span><span class="lineCov">          1 : }</span>
-<a name="242"><span class="lineNum">     242 </span>            : </a>
-<span class="lineNum">     243 </span>            : void
-<span class="lineNum">     244 </span><span class="lineCov">          1 : test_dBas1(void) {</span>
-<span class="lineNum">     245 </span><span class="lineCov">          1 :   dl_t l = 1, a[] = {0}, n = DL(a); d_t * d = dini(l); int r;</span>
-<span class="lineNum">     246 </span><span class="lineCov">          1 :   printf(&quot;test dBas: given {0}&quot;), r = dBas(a, n, &amp;d, &amp;l);</span>
-<span class="lineNum">     247 </span><span class="lineCov">          1 :   test(r, 1, &quot;base should eq 1&quot;), free(d), puts(&quot;&quot;);</span>
-<span class="lineNum">     248 </span><span class="lineCov">          1 : }</span>
-<a name="249"><span class="lineNum">     249 </span>            : </a>
-<span class="lineNum">     250 </span>            : void
-<span class="lineNum">     251 </span><span class="lineCov">          1 : test_dBas2(void) {</span>
-<span class="lineNum">     252 </span><span class="lineCov">          1 :   dl_t l = 1, a[] = {1}, n = DL(a); d_t * d = dini(l); int r;</span>
-<span class="lineNum">     253 </span><span class="lineCov">          1 :   printf(&quot;test dBas: given {1}&quot;), r = dBas(a, n, &amp;d, &amp;l);</span>
-<span class="lineNum">     254 </span><span class="lineCov">          1 :   test(r, 0, &quot;base should eq 0&quot;), free(d), puts(&quot;&quot;);</span>
-<span class="lineNum">     255 </span><span class="lineCov">          1 : }</span>
-<a name="256"><span class="lineNum">     256 </span>            : </a>
-<span class="lineNum">     257 </span>            : void
-<span class="lineNum">     258 </span><span class="lineCov">          1 : test_dBas3(void) {</span>
-<span class="lineNum">     259 </span><span class="lineCov">          1 :   dl_t l = 1, a[] = {2}, n = DL(a); d_t * d = dini(l);</span>
-<span class="lineNum">     260 </span><span class="lineCov">          1 :   printf(&quot;test dBas: given {2} when len &lt; 2&quot;), dBas(a, n, &amp;d, &amp;l);</span>
-<span class="lineNum">     261 </span><span class="lineCov">          1 :   test(l, 3, &quot;len should eq 3&quot;), free(d), puts(&quot;&quot;);</span>
-<span class="lineNum">     262 </span><span class="lineCov">          1 : }</span>
-<span class="lineNum">     263 </span>            : 
-<span class="lineNum">     264 </span>            : #define DI SMAXT(dt_t)
-<a name="265"><span class="lineNum">     265 </span>            : </a>
-<span class="lineNum">     266 </span>            : void
-<span class="lineNum">     267 </span><span class="lineCov">          1 : test_dBas4(void) {</span>
-<span class="lineNum">     268 </span>            :   dl_t l; d_t * d; int r;
-<span class="lineNum">     269 </span>            :   printf(&quot;test dBas: given {MAX}&quot;);
-<span class="lineNum">     270 </span><span class="lineCov">          1 :   if (!test(DX == DI, 1, &quot;this test should be run with sizeof dl_t == dt_t&quot;)) {</span>
-<span class="lineNum">     271 </span><span class="lineNoCov">          0 :     l = 1, d = dini(l), r = dBas((dl_t[]){DI}, 1, &amp;d, &amp;l);</span>
-<span class="lineNum">     272 </span><span class="lineNoCov">          0 :     test(r, 0, &quot;base should eq 0&quot;), free(d);</span>
-<span class="lineNum">     273 </span>            :   }
-<span class="lineNum">     274 </span><span class="lineCov">          1 :   puts(&quot;&quot;);</span>
-<span class="lineNum">     275 </span><span class="lineCov">          1 : }</span>
-<a name="276"><span class="lineNum">     276 </span>            : </a>
-<span class="lineNum">     277 </span>            : void
-<span class="lineNum">     278 </span><span class="lineCov">          1 : test_dBas5(void) {</span>
-<span class="lineNum">     279 </span>            :   dl_t l; d_t * d; int r;
-<span class="lineNum">     280 </span>            :   printf(&quot;test dBas: given {MAX} when last cell is occupied&quot;);
-<span class="lineNum">     281 </span><span class="lineCov">          1 :   if (!test(DX == DI, 1, &quot;this test should be run with sizeof dl_t == dt_t&quot;)) {</span>
-<span class="lineNum">     282 </span><span class="lineNoCov">          0 :     l = DI, d = dini(l), d[1].b = l-1, d[l-1].c = -1, d[l].c = 0;</span>
-<span class="lineNum">     283 </span><span class="lineNoCov">          0 :     r = dBas((dl_t[]){DI}, 1, &amp;d, &amp;l);</span>
-<span class="lineNum">     284 </span><span class="lineNoCov">          0 :     test(r, -1, &quot;should return error: len is max&quot;), free(d);</span>
-<span class="lineNum">     285 </span>            :   }
-<span class="lineNum">     286 </span><span class="lineCov">          1 :   puts(&quot;&quot;);</span>
-<span class="lineNum">     287 </span><span class="lineCov">          1 : }</span>
-<a name="288"><span class="lineNum">     288 </span>            : </a>
-<span class="lineNum">     289 </span>            : void
-<span class="lineNum">     290 </span><span class="lineCov">          1 : test_dBas6(void) {</span>
-<span class="lineNum">     291 </span><span class="lineCov">          1 :   dl_t l = 3, a[] = {1,2}, n = DL(a); d_t * d = dini(l); int r;</span>
-<span class="lineNum">     292 </span><span class="lineCov">          1 :   printf(&quot;test dBas: given {1,2}&quot;), r = dBas(a, n, &amp;d, &amp;l);</span>
-<span class="lineNum">     293 </span><span class="lineCov">          1 :   test(r, 0, &quot;base should eq 0&quot;), free(d), puts(&quot;&quot;);</span>
-<span class="lineNum">     294 </span><span class="lineCov">          1 : }</span>
-<a name="295"><span class="lineNum">     295 </span>            : </a>
-<span class="lineNum">     296 </span>            : void
-<span class="lineNum">     297 </span><span class="lineCov">          1 : test_dBas7(void) {</span>
-<span class="lineNum">     298 </span><span class="lineCov">          1 :   dl_t l = 7, a[] = {1,3,5}, n = DL(a); d_t * d = dini(l); int r;</span>
-<span class="lineNum">     299 </span><span class="lineCov">          1 :   printf(&quot;test dBas: given {1,3,5} when base[5] is occupied&quot;), d[5].c = 0;</span>
-<span class="lineNum">     300 </span><span class="lineCov">          1 :   r = dBas(a, n, &amp;d, &amp;l), test(r, 1, &quot;base should eq 1&quot;), free(d), puts(&quot;&quot;);</span>
-<span class="lineNum">     301 </span><span class="lineCov">          1 : }</span>
-<a name="302"><span class="lineNum">     302 </span>            : </a>
-<span class="lineNum">     303 </span>            : void
-<span class="lineNum">     304 </span><span class="lineCov">          1 : test_dBas8(void) {</span>
-<span class="lineNum">     305 </span><span class="lineCov">          1 :   dl_t l = 1, a[] = {1,3}, n = DL(a); d_t * d = dini(l);</span>
-<span class="lineNum">     306 </span><span class="lineCov">          1 :   printf(&quot;test dBas: given {1,3} when len &lt; 3&quot;), dBas(a, n, &amp;d, &amp;l);</span>
-<span class="lineNum">     307 </span><span class="lineCov">          1 :   test(l, 3, &quot;len should eq 3&quot;), free(d), puts(&quot;&quot;);</span>
-<span class="lineNum">     308 </span><span class="lineCov">          1 : }</span>
-<a name="309"><span class="lineNum">     309 </span>            : </a>
-<span class="lineNum">     310 </span>            : void
-<span class="lineNum">     311 </span><span class="lineCov">          1 : test_dBas9(void) {</span>
-<span class="lineNum">     312 </span>            :   dl_t l, * a, n; d_t * d; int r;
-<span class="lineNum">     313 </span>            :   printf(&quot;test dBas: given {1,MAX} when only last cell are unoccupied&quot;);
-<span class="lineNum">     314 </span><span class="lineCov">          1 :   if (!test(DX == DI, 1, &quot;this test should be run with sizeof dl_t == dt_t&quot;)) {</span>
-<span class="lineNum">     315 </span><span class="lineNoCov">          0 :     l = 1, a = (dl_t[]){1,DI}, n = 2, d = dini(l);</span>
-<span class="lineNum">     316 </span><span class="lineNoCov">          0 :     dBas(a, n, &amp;d, &amp;l), test(l, DI, &quot;len should eq MAX&quot;),</span>
-<span class="lineNum">     317 </span><span class="lineNoCov">          0 :     d-&gt;c = -DI, r = dBas(a, n, &amp;d, &amp;l);</span>
-<span class="lineNum">     318 </span><span class="lineNoCov">          0 :     test(r, -1, &quot;should return error: len is max&quot;), free(d);</span>
-<span class="lineNum">     319 </span>            :   }
-<span class="lineNum">     320 </span><span class="lineCov">          1 :   puts(&quot;&quot;);</span>
-<span class="lineNum">     321 </span><span class="lineCov">          1 : }</span>
-<a name="322"><span class="lineNum">     322 </span>            : </a>
-<span class="lineNum">     323 </span>            : void
-<span class="lineNum">     324 </span><span class="lineCov">          1 : test_dBas10(void) {</span>
-<span class="lineNum">     325 </span>            :   dl_t i, l; d_t * d; int r;
-<span class="lineNum">     326 </span>            :   printf(&quot;test dBas: given {1,3,6} when base[1,3,5...MAX-2] are occupied&quot;);
-<span class="lineNum">     327 </span><span class="lineCov">          1 :   if (!test(DX == DI, 1, &quot;this test should be run with sizeof dl_t == dt_t&quot;)) {</span>
-<span class="lineNum">     328 </span><span class="lineNoCov">          0 :     l = DI, d = dini(l);</span>
-<span class="lineNum">     329 </span><span class="lineNoCov">          0 :     for (i = 0; i &lt; l-1; i+=2) d[i].c = -i-2, d[i+1].c = 0;</span>
-<span class="lineNum">     330 </span><span class="lineNoCov">          0 :     r = dBas((dl_t[]){1,3,6}, 3, &amp;d, &amp;l);</span>
-<span class="lineNum">     331 </span><span class="lineNoCov">          0 :     test(r, DI-6, &quot;base should eq MAX-6&quot;), free(d);</span>
-<span class="lineNum">     332 </span>            :   }
-<span class="lineNum">     333 </span><span class="lineCov">          1 :   puts(&quot;&quot;);</span>
-<span class="lineNum">     334 </span><span class="lineCov">          1 : }</span>
-<a name="335"><span class="lineNum">     335 </span>            : </a>
-<span class="lineNum">     336 </span>            : void
-<span class="lineNum">     337 </span><span class="lineCov">          1 : test_dBas11(void) {</span>
-<span class="lineNum">     338 </span>            :   dl_t i, l; d_t * d; int r;
-<span class="lineNum">     339 </span>            :   printf(&quot;test dBas: given {1,3,6,7} when base[1,3,5...MAX-2] are occupied&quot;);
-<span class="lineNum">     340 </span><span class="lineCov">          1 :   if (!test(DX == DI, 1, &quot;this test should be run with sizeof dl_t == dt_t&quot;)) {</span>
-<span class="lineNum">     341 </span><span class="lineNoCov">          0 :     l = DI, d = dini(l);</span>
-<span class="lineNum">     342 </span><span class="lineNoCov">          0 :     for (i = 0; i &lt; l-1; i+=2) d[i].b--, d[i].c = -i-2, d[i+1].c = 0;</span>
-<span class="lineNum">     343 </span><span class="lineNoCov">          0 :     d[2].b = l, d[l].c = -2, r = dBas((dl_t[]){1,3,6,7}, 4, &amp;d, &amp;l);</span>
-<span class="lineNum">     344 </span><span class="lineNoCov">          0 :     test(r, -1, &quot;should return error: len is max (the key is out of bound)&quot;);</span>
-<span class="lineNum">     345 </span><span class="lineNoCov">          0 :     free(d);</span>
-<span class="lineNum">     346 </span>            :   }
-<span class="lineNum">     347 </span><span class="lineCov">          1 :   puts(&quot;&quot;);</span>
-<span class="lineNum">     348 </span><span class="lineCov">          1 : }</span>
-<a name="349"><span class="lineNum">     349 </span>            : </a>
-<span class="lineNum">     350 </span>            : void
-<span class="lineNum">     351 </span><span class="lineCov">          1 : test_drel1(void) {</span>
-<span class="lineNum">     352 </span><span class="lineCov">          1 :   dl_t l = 4, a[] = {2}, n = DL(a);</span>
-<span class="lineNum">     353 </span><span class="lineCov">          1 :   d_t d[] = {{1,-1},{4,-2},{1,-4},{-1,0},{2,-1}},</span>
-<span class="lineNum">     354 </span><span class="lineCov">          1 :       e[] = {{0,-1},{4,-3},{-1,0},{1,-4},{3,-1}};</span>
-<span class="lineNum">     355 </span>            :   printf(&quot;test drel: given {2} when base+2 is in the middle of double array&quot;);
-<span class="lineNum">     356 </span><span class="lineCov">          1 :   drel(0, d[0].b, 0, a, n, d, l), test_dcmp(d, l, e, DL(e)-1), puts(&quot;&quot;);</span>
-<span class="lineNum">     357 </span><span class="lineCov">          1 : }</span>
-<a name="358"><span class="lineNum">     358 </span>            : </a>
-<span class="lineNum">     359 </span>            : void
-<span class="lineNum">     360 </span><span class="lineCov">          1 : test_drel2(void) {</span>
-<span class="lineNum">     361 </span><span class="lineCov">          1 :   dl_t l = 3, a[] = {1}, n = DL(a);</span>
-<span class="lineNum">     362 </span><span class="lineCov">          1 :   d_t d[] = {{0,-2},{-1,0},{3,-3},{2,-2}}, e[] = {{1,-1},{3,-3},{-1,0},{1,-1}};</span>
-<span class="lineNum">     363 </span>            :   printf(&quot;test drel: given {1} when the new child is the first empty cell&quot;);
-<span class="lineNum">     364 </span><span class="lineCov">          1 :   drel(0, d[0].b, 1, a, n, d, l), test_dcmp(d, l, e, DL(e)-1), puts(&quot;&quot;);</span>
-<span class="lineNum">     365 </span><span class="lineCov">          1 : }</span>
-<a name="366"><span class="lineNum">     366 </span>            : </a>
-<span class="lineNum">     367 </span>            : void
-<span class="lineNum">     368 </span><span class="lineCov">          1 : test_drel3(void) {</span>
-<span class="lineNum">     369 </span><span class="lineCov">          1 :   dl_t l = 3, a[] = {1}, n = DL(a);</span>
-<span class="lineNum">     370 </span><span class="lineCov">          1 :   d_t d[] = {{0,-2},{-1,0},{2,-2},{-1,1}}, e[] = {{1,-1},{1,-1},{-1,0},{-1,1}};</span>
-<span class="lineNum">     371 </span>            :   printf(&quot;test drel: given {1} when the new child is the final empty cell&quot;);
-<span class="lineNum">     372 </span><span class="lineCov">          1 :   drel(0, d[0].b, 1, a, n, d, l), test_dcmp(d, l, e, DL(e)-1), puts(&quot;&quot;);</span>
-<span class="lineNum">     373 </span><span class="lineCov">          1 : }</span>
-<a name="374"><span class="lineNum">     374 </span>            : </a>
-<span class="lineNum">     375 </span>            : void
-<span class="lineNum">     376 </span><span class="lineCov">          1 : test_drel4(void) {</span>
-<span class="lineNum">     377 </span><span class="lineCov">          1 :   dl_t l = 3, a[] = {1}, n = DL(a);</span>
-<span class="lineNum">     378 </span><span class="lineCov">          1 :   d_t d[] = {{1,-1},{1,-1},{-1,0},{-1,1}}, e[] = {{0,-2},{-1,0},{2,-2},{-1,1}};</span>
-<span class="lineNum">     379 </span>            :   printf(&quot;test drel: given {1} when there is one empty preceding the child&quot;);
-<span class="lineNum">     380 </span><span class="lineCov">          1 :   drel(0, d[0].b, 0, a, n, d, l), test_dcmp(d, l, e, DL(e)-1), puts(&quot;&quot;);</span>
-<span class="lineNum">     381 </span><span class="lineCov">          1 : }</span>
-<a name="382"><span class="lineNum">     382 </span>            : </a>
-<span class="lineNum">     383 </span>            : void
-<span class="lineNum">     384 </span><span class="lineCov">          1 : test_drel5(void) {</span>
-<span class="lineNum">     385 </span><span class="lineCov">          1 :   dl_t l = 4, a[] = {1,3}, n = DL(a);</span>
-<span class="lineNum">     386 </span><span class="lineCov">          1 :   d_t d[] = {{0,-2},{-1,0},{4,-4},{-2,0},{2,-2}},</span>
-<span class="lineNum">     387 </span><span class="lineCov">          1 :       e[] = {{1,-1},{3,-3},{-1,0},{1,-1},{-2,0}};</span>
-<span class="lineNum">     388 </span>            :   printf(&quot;test drel: given {1,3}&quot;);
-<span class="lineNum">     389 </span><span class="lineCov">          1 :   drel(0, d[0].b, 1, a, n, d, l), test_dcmp(d, l, e, DL(e)-1), puts(&quot;&quot;);</span>
-<span class="lineNum">     390 </span><span class="lineCov">          1 : }</span>
-<a name="391"><span class="lineNum">     391 </span>            : </a>
-<span class="lineNum">     392 </span>            : void
-<span class="lineNum">     393 </span><span class="lineCov">          1 : test_drel6(void) {</span>
-<span class="lineNum">     394 </span><span class="lineCov">          1 :   dl_t l = 6, a[] = {1,4}, n = DL(a);</span>
-<span class="lineNum">     395 </span><span class="lineCov">          1 :   d_t d[] = {{0,-2},{1,0},{-1,1},{6,-6},{3,0},{-2,4},{3,-3}},</span>
-<span class="lineNum">     396 </span><span class="lineCov">          1 :       e[] = {{2,-1},{4,-4},{-1,3},{1,0},{1,-1},{-2,6},{3,0}};</span>
-<span class="lineNum">     397 </span>            :   printf(&quot;test drel: given {1,4} when each node have one child&quot;);
-<span class="lineNum">     398 </span><span class="lineCov">          1 :   drel(0, d[0].b, 2, a, n, d, l), test_dcmp(d, l, e, DL(e)-1), puts(&quot;&quot;);</span>
-<span class="lineNum">     399 </span><span class="lineCov">          1 : }</span>
-<a name="400"><span class="lineNum">     400 </span>            : </a>
-<span class="lineNum">     401 </span>            : void
-<span class="lineNum">     402 </span><span class="lineCov">          1 : test_drel7(void) {</span>
-<span class="lineNum">     403 </span><span class="lineCov">          1 :   dl_t l = 4, a[] = {1,2}, n = DL(a);</span>
-<span class="lineNum">     404 </span><span class="lineCov">          1 :   d_t d[] = {{2,-1},{2,-2},{1,-1},{-1,0},{-2,0}},</span>
-<span class="lineNum">     405 </span><span class="lineCov">          1 :       e[] = {{0,-3},{-1,0},{-2,0},{4,-4},{3,-3}};</span>
-<span class="lineNum">     406 </span>            :   printf(&quot;test drel: given {1,2} when multiple child nodes move to front&quot;);
-<span class="lineNum">     407 </span><span class="lineCov">          1 :   drel(0, d[0].b, 0, a, n, d, l), test_dcmp(d, l, e, DL(e)-1), puts(&quot;&quot;);</span>
-<span class="lineNum">     408 </span><span class="lineCov">          1 : }</span>
-<a name="409"><span class="lineNum">     409 </span>            : </a>
-<span class="lineNum">     410 </span>            : void
-<span class="lineNum">     411 </span><span class="lineCov">          1 : test_drel8(void) {</span>
-<span class="lineNum">     412 </span>            :   dl_t l, * a; d_t * d, * e;
-<span class="lineNum">     413 </span>            :   printf(&quot;test drel: given {1} when this node has a child: {UNSIGNED_MAX+1}&quot;);
-<span class="lineNum">     414 </span><span class="lineCov">          1 :   if (!test(DX &gt; DI, 1, &quot;this test should be run with sizeof dl_t &gt; dt_t&quot;)) {</span>
-<span class="lineNum">     415 </span><span class="lineCov">          1 :     l = DM+(DX &gt; DI), (d=dini(l))-&gt;b = 2, (e=dini(l))-&gt;b = 0, d[d[4].b=2].c=-4;</span>
-<span class="lineNum">     416 </span><span class="lineCov">          1 :     d[d[1].b = DM].c = -1, d[3] = (d_t){0,0}, d[DM+1] = (d_t){-1,3};</span>
-<span class="lineNum">     417 </span><span class="lineCov">          1 :     e[e[2].b = DM].c = -2, e[1] = (d_t){0,0}, e[DM+1] = (d_t){-1,1}, e-&gt;c = -2;</span>
-<span class="lineNum">     418 </span><span class="lineCov">          1 :     drel(0, d[0].b, 0, (dl_t[]){1}, 1, d, l), test_dcmp(d, l, e, l);</span>
-<span class="lineNum">     419 </span><span class="lineCov">          1 :     free(d), free(e);</span>
-<span class="lineNum">     420 </span>            :   }
-<span class="lineNum">     421 </span><span class="lineCov">          1 :   puts(&quot;&quot;);</span>
-<span class="lineNum">     422 </span><span class="lineCov">          1 : }</span>
-<span class="lineNum">     423 </span>            : 
-<span class="lineNum">     424 </span>            : void
-<span class="lineNum">     425 </span><span class="lineCov">          1 : test_dral1(void) {</span>
-<span class="lineNum">     426 </span><span class="lineCov">          2 :   dl_t c = 1; dt_t * t = dinl(c), e[] = {0,0};</span>
-<span class="lineNum">     427 </span><span class="lineCov">          1 :   printf(&quot;test dral: given {0}&quot;), dral(&amp;t, &amp;c);</span>
-<span class="lineNum">     428 </span><span class="lineCov">          1 :   test(memcmp(t, e, DL(e)*DT), 0, &quot;tail should eq {0,0}&quot;), free(t), puts(&quot;&quot;);</span>
-<span class="lineNum">     429 </span><span class="lineCov">          1 : }</span>
-<span class="lineNum">     430 </span>            : 
-<span class="lineNum">     431 </span>            : void
-<span class="lineNum">     432 </span><span class="lineCov">          1 : test_dral2(void) {</span>
-<span class="lineNum">     433 </span><span class="lineCov">          2 :   dl_t c = 2; dt_t * t = dinl(c), e[] = {1,2,0,0};</span>
-<span class="lineNum">     434 </span>            :   printf(&quot;test dral: given {1,2}&quot;);
-<span class="lineNum">     435 </span><span class="lineCov">          1 :   t[0] = 1, t[1] = 2, dral(&amp;t, &amp;c);</span>
-<span class="lineNum">     436 </span><span class="lineCov">          1 :   test(memcmp(t, e, DL(e)*DT), 0, &quot;tail should eq {1,2,0,0}&quot;), free(t);</span>
-<span class="lineNum">     437 </span><span class="lineCov">          1 :   puts(&quot;&quot;);</span>
-<span class="lineNum">     438 </span><span class="lineCov">          1 : }</span>
-<span class="lineNum">     439 </span>            : 
-<span class="lineNum">     440 </span>            : void
-<span class="lineNum">     441 </span><span class="lineCov">          1 : test_dins1(void) {</span>
-<span class="lineNum">     442 </span><span class="lineCov">          1 :   dl_t l = 1, tl = 0, tc = 1;</span>
-<span class="lineNum">     443 </span><span class="lineCov">          2 :   d_t * d = dini(l), e[] = {{0,0},{-1,0}}; dt_t a[] = {0}, * t = dinl(tc);</span>
-<span class="lineNum">     444 </span><span class="lineCov">          1 :   printf(&quot;test dins: given {0}&quot;), dins(a, DL(a), &amp;d, &amp;l, &amp;t, &amp;tl, &amp;tc);</span>
-<span class="lineNum">     445 </span><span class="lineCov">          1 :   test_dcmp(d, l, e, DL(e)-1), free(d), free(t), puts(&quot;&quot;);</span>
-<span class="lineNum">     446 </span><span class="lineCov">          1 : }</span>
-<a name="447"><span class="lineNum">     447 </span>            : </a>
-<span class="lineNum">     448 </span>            : void
-<span class="lineNum">     449 </span><span class="lineNoCov">          0 : code(dt_t * a, dl_t n) { /* assume n &gt;= 1 */</span>
-<span class="lineNum">     450 </span><span class="lineCov">         24 :   while (--n, a[n] = a[n] ? a[n] - 'a' + 1 : 0, n);</span>
-<span class="lineNum">     451 </span><span class="lineNoCov">          0 : }</span>
-<a name="452"><span class="lineNum">     452 </span>            : </a>
-<span class="lineNum">     453 </span>            : int
-<span class="lineNum">     454 </span><span class="lineNoCov">          0 : wta(FILE * f, dt_t * a, dl_t n) {</span>
-<span class="lineNum">     455 </span>            :   int j, k;
-<span class="lineNum">     456 </span><span class="lineNoCov">          0 :   for (j = 0; j &lt; n; j += k) {</span>
-<span class="lineNum">     457 </span><span class="lineNoCov">          0 :     for (k = 0; k &lt; 32 &amp;&amp; j+k &lt; n; k++) fprintf(f, &quot;%3d &quot;, j+k);</span>
-<span class="lineNum">     458 </span><span class="lineNoCov">          0 :     fputc('\n', f);</span>
-<span class="lineNum">     459 </span><span class="lineNoCov">          0 :     for (k = 0; k &lt; 32 &amp;&amp; j+k &lt; n; k++) fprintf(f, &quot;----&quot;);</span>
-<span class="lineNum">     460 </span><span class="lineNoCov">          0 :     fputc('\n', f);</span>
-<span class="lineNum">     461 </span><span class="lineNoCov">          0 :     for (k = 0; k &lt; 32 &amp;&amp; j+k &lt; n; k++)</span>
-<span class="lineNum">     462 </span><span class="lineNoCov">          0 :       fprintf(f, &quot;  %c  &quot;, a[j+k] &gt; 1 ? a[j+k]-1: a[j+k] == 1 ? '#' : '.');</span>
-<span class="lineNum">     463 </span>            :       /*fprintf(f, &quot;  %c &quot;, a[j+k] &gt; 1 ? a[j+k]+'a'-2: a[j+k] ? '#' : '.');*/
-<span class="lineNum">     464 </span>            :       /*fprintf(f, &quot; %2d &quot;, a[j+k] ? a[j+k]-1: 99);*/
-<span class="lineNum">     465 </span><span class="lineNoCov">          0 :     fputc('\n', f);</span>
-<span class="lineNum">     466 </span><span class="lineNoCov">          0 :     if (j+k == n) break;</span>
-<span class="lineNum">     467 </span><span class="lineNoCov">          0 :     fputc('\n', f);</span>
-<span class="lineNum">     468 </span>            :   }
-<span class="lineNum">     469 </span><span class="lineNoCov">          0 : }</span>
-<a name="470"><span class="lineNum">     470 </span>            : </a>
-<span class="lineNum">     471 </span>            : int
-<span class="lineNum">     472 </span><span class="lineNoCov">          0 : fta(char * s, dt_t * a, dl_t n) {</span>
-<span class="lineNum">     473 </span><span class="lineNoCov">          0 :   FILE * f = fopen(s, &quot;w&quot;); wta(f, a, n), fclose(f);</span>
-<span class="lineNum">     474 </span><span class="lineNoCov">          0 : }</span>
-<a name="475"><span class="lineNum">     475 </span>            : </a>
-<span class="lineNum">     476 </span>            : int
-<span class="lineNum">     477 </span><span class="lineNoCov">          0 : pta(dt_t * a, dl_t n) { wta(stdout, a, n); }</span>
-<span class="lineNum">     478 </span>            : 
-<span class="lineNum">     479 </span>            : void
-<span class="lineNum">     480 </span><span class="lineCov">          2 : test_tcmp(dt_t * a, dl_t al, dt_t * b, dl_t bl) {</span>
-<span class="lineNum">     481 </span><span class="lineCov">          4 :   (al == bl &amp;&amp; !memcmp(a, b, al)) &amp;&amp; printf(&quot;  &quot;GOOD) ||</span>
-<span class="lineNum">     482 </span><span class="lineNoCov">          0 :       (puts(&quot;\n  &quot;BAD), pta(a, al), puts(&quot;\n  should eq&quot;), pta(b, bl));</span>
-<span class="lineNum">     483 </span><span class="lineCov">          2 : }</span>
-<span class="lineNum">     484 </span>            : 
-<span class="lineNum">     485 </span>            : void
-<span class="lineNum">     486 </span><span class="lineCov">          1 : test_dins2(void) {</span>
-<span class="lineNum">     487 </span><span class="lineCov">          1 :   dl_t l = 1, tl = 0, tc = 1;</span>
-<span class="lineNum">     488 </span><span class="lineCov">          1 :   d_t * d = dini(l), e[] = {{0,-1},{3,-3},{-1,0},{1,-1}};</span>
-<span class="lineNum">     489 </span><span class="lineCov">          2 :   dt_t a[] = {1}, * t = dinl(tc), te[] = {0};</span>
-<span class="lineNum">     490 </span><span class="lineCov">          1 :   printf(&quot;test dins: given {1}&quot;), dins(a, DL(a), &amp;d, &amp;l, &amp;t, &amp;tl, &amp;tc);</span>
-<span class="lineNum">     491 </span><span class="lineCov">          1 :   test_dcmp(d, l, e, DL(e)-1), test_tcmp(t, tl, te, DL(te)), free(d), free(t);</span>
-<span class="lineNum">     492 </span><span class="lineCov">          1 :   puts(&quot;&quot;);</span>
-<span class="lineNum">     493 </span><span class="lineCov">          1 : }</span>
-<a name="494"><span class="lineNum">     494 </span>            : </a>
-<span class="lineNum">     495 </span>            : void /* base array + check array = double array */
-<span class="lineNum">     496 </span><span class="lineNoCov">          0 : dcat(dl_t * b, dl_t * c, d_t * d, dl_t n) { /* assume n &gt;= 1 */</span>
-<span class="lineNum">     497 </span><span class="lineCov">          4 :   while (--n, d[n] = (d_t){b[n],c[n]}, n);</span>
-<span class="lineNum">     498 </span><span class="lineNoCov">          0 : }</span>
-<a name="499"><span class="lineNum">     499 </span>            : </a>
-<span class="lineNum">     500 </span>            : void /* convert human readable string to tail */
-<span class="lineNum">     501 </span><span class="lineCov">          1 : tconv(dt_t * t, dl_t * n) {</span>
-<span class="lineNum">     502 </span>            :   dl_t i, j; dl_t c;
-<span class="lineNum">     503 </span><span class="lineCov">         21 :   for (i = j = 0; i &lt; *n; i += 3, j++)</span>
-<span class="lineNum">     504 </span><span class="lineCov">         20 :     t[j] = (c=t[i])=='#' ? 1:(c=='.' ? 0:c-'a'+2);</span>
-<span class="lineNum">     505 </span><span class="lineCov">          1 :   *n /= 3;</span>
-<span class="lineNum">     506 </span><span class="lineCov">          1 : }</span>
-<span class="lineNum">     507 </span>            : 
-<span class="lineNum">     508 </span>            : void
-<span class="lineNum">     509 </span><span class="lineCov">          1 : test_dins3(void) {</span>
-<span class="lineNum">     510 </span><span class="lineCov">          1 :   dl_t l = 1, tl = 0, tc = 1, tn,</span>
-<span class="lineNum">     511 </span>            :        /*       .   #   a   b   c   d   e   f   g   h   i   j   k   l   m   n */
-<span class="lineNum">     512 </span>            :        /*       0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15 */
-<span class="lineNum">     513 </span><span class="lineCov">          1 :        b1[] = { 0,  2,  1, -1},</span>
-<span class="lineNum">     514 </span><span class="lineCov">          1 :        c1[] = {-1, -2, -1,  0},</span>
-<span class="lineNum">     515 </span>            :        /*       0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15 */
-<span class="lineNum">     516 </span><span class="lineCov">          1 :        b2[] = { 0, 15,  1, -1,  2,  4,  5,  6,  7,  8,  9,-10, 10, 12, 13, 14},</span>
-<span class="lineNum">     517 </span><span class="lineCov">          1 :        c2[] = {-1, -2, -4,  0, -5, -6, -7, -8, -9,-10,-12,  0,-13,-14,-15, -1},</span>
-<span class="lineNum">     518 </span>            :        /*       0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15 */
-<span class="lineNum">     519 </span><span class="lineCov">          1 :        b3[] = { 0, 15,  0,  0, -3,-14,  1,  6,  7,  8,  9,-10, 10, 12, 13, 14},</span>
-<span class="lineNum">     520 </span><span class="lineCov">          1 :        c3[] = {-1, -6,  3,  0,  2,  2, -7, -8, -9,-10,-12,  0,-13,-14,-15, -1},</span>
-<span class="lineNum">     521 </span>            :        /*       0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15 */
-<span class="lineNum">     522 </span><span class="lineCov">          1 :        b4[] = { 3, 15,  0,-18, -3,-14,  0,  1,  7,  8,  9, 10, 11, 12,-10, 13},</span>
-<span class="lineNum">     523 </span><span class="lineCov">          1 :        c4[] = {-1, -7,  6,  2,  2,  2,  0, -8, -9,-10,-11,-12,-13,-15,  0, -1};</span>
-<span class="lineNum">     524 </span><span class="lineCov">          1 :   d_t * d = dini(l), e1[DL(b1)], e2[DL(b2)], e3[DL(b3)], e4[DL(b4)];</span>
-<span class="lineNum">     525 </span><span class="lineCov">          1 :   dt_t a1[] = &quot;bachelor&quot;, a2[] = &quot;jar&quot;, a3[] = &quot;badge&quot;, a4[] = &quot;baby&quot;, n,</span>
-<span class="lineNum">     526 </span><span class="lineCov">          2 :       * t = dinl(tc), te[] =</span>
-<span class="lineNum">     527 </span>            :       /*    0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 */
-<span class="lineNum">     528 </span>            :       /**/ &quot;a  c  h  e  l  o  r  #  .  a  r  #  .  g  e  #  .  y  #  . &quot;;
-<span class="lineNum">     529 </span>            :   printf(&quot;test dins: given {bachelor#, jar#, badge#, baby#}&quot;);
-<span class="lineNum">     530 </span>            :   dcat(b1, c1, e1, DL(b1)), dcat(b2, c2, e2, DL(b2));
-<span class="lineNum">     531 </span>            :   dcat(b3, c3, e3, DL(b3)), dcat(b4, c4, e4, DL(b4));
-<span class="lineNum">     532 </span><span class="lineCov">          1 :   code(a1,n=DL(a1)), dins(a1,n,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc), test_dcmp(d,l,e1,DL(e1)-1);</span>
-<span class="lineNum">     533 </span><span class="lineCov">          2 :   code(a2,n=DL(a2)), dins(a2,n,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc), test_dcmp(d,l,e2,DL(e2)-1);</span>
-<span class="lineNum">     534 </span><span class="lineCov">          2 :   code(a3,n=DL(a3)), dins(a3,n,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc), test_dcmp(d,l,e3,DL(e3)-1);</span>
-<span class="lineNum">     535 </span><span class="lineCov">          2 :   code(a4,n=DL(a4)), dins(a4,n,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc), test_dcmp(d,l,e4,DL(e4)-1);</span>
-<span class="lineNum">     536 </span><span class="lineCov">          1 :   tn = DL(te), tconv(te,&amp;tn), test_tcmp(t,tl,te,tn), free(d), free(t), puts(&quot;&quot;);</span>
-<span class="lineNum">     537 </span><span class="lineCov">          1 : }</span>
-<span class="lineNum">     538 </span>            : 
-<span class="lineNum">     539 </span>            : void
-<span class="lineNum">     540 </span><span class="lineCov">          1 : test_dins4(void) {</span>
-<span class="lineNum">     541 </span><span class="lineCov">          1 :   dl_t l = 1, tl = 0, tc = 1;</span>
-<span class="lineNum">     542 </span><span class="lineCov">          1 :   d_t * d = dini(l),</span>
-<span class="lineNum">     543 </span><span class="lineCov">          1 :       e1[] = {{0,-1},{7,-5},{0,0},{-2,2},{-3,2},{1,-6},{5,-7},{6,-1}},</span>
-<span class="lineNum">     544 </span><span class="lineCov">          1 :       e2[] = {{3,-1},{7,-2},{1,-7},{-2,5},{-3,5},{0,0},{-4,0},{2,-1}},</span>
-<span class="lineNum">     545 </span><span class="lineCov">          1 :       e3[] = {{5,-1},{15,-2},{1,-6},{-2,7},{-3,7},{-5,7},{2,-9},{0,0},</span>
-<span class="lineNum">     546 </span>            :         {-4,0},{6,-10},{9,-11},{10,-12},{11,-13},{12,-14},{13,-15},{14,-1}};
-<span class="lineNum">     547 </span><span class="lineCov">          2 :   dt_t a1[]={1}, a2[]={1,2}, a3[]={1,3}, a4[]={2}, a5[]={1,4}, * t = dinl(tc);</span>
-<span class="lineNum">     548 </span>            :   printf(&quot;test dins: given {1},{1,2},{1,3},{2},{1,4}&quot;);
-<span class="lineNum">     549 </span><span class="lineCov">          1 :   dins(a1,DL(a1),&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc), dins(a2,DL(a2),&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc);</span>
-<span class="lineNum">     550 </span><span class="lineCov">          1 :   dins(a3,DL(a3),&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc), test_dcmp(d, l, e1, DL(e1)-1);</span>
-<span class="lineNum">     551 </span><span class="lineCov">          1 :   dins(a4,DL(a4),&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc), test_dcmp(d, l, e2, DL(e2)-1);</span>
-<span class="lineNum">     552 </span><span class="lineCov">          1 :   dins(a5,DL(a5),&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc), test_dcmp(d, l, e3, DL(e3)-1);</span>
-<span class="lineNum">     553 </span><span class="lineCov">          1 :   free(d), free(t), puts(&quot;&quot;);</span>
-<span class="lineNum">     554 </span><span class="lineCov">          1 : }</span>
-<span class="lineNum">     555 </span>            : 
-<span class="lineNum">     556 </span>            : void
-<span class="lineNum">     557 </span><span class="lineCov">          1 : test_dins5(void) {</span>
-<span class="lineNum">     558 </span><span class="lineCov">          1 :   dl_t l = 1, tl = 0, tc = 1;</span>
-<span class="lineNum">     559 </span><span class="lineCov">          1 :   d_t * d = dini(l), e[] = {{0,-1},{1,-1},{0,0},{-2,2}};</span>
-<span class="lineNum">     560 </span><span class="lineCov">          2 :   dt_t a1[] = {1}, a2[] = {1,2}, * t = dinl(tc); int r;</span>
-<span class="lineNum">     561 </span>            :   printf(&quot;test dins: given {1},{1,2},{1,2},{1}&quot;);
-<span class="lineNum">     562 </span><span class="lineCov">          1 :   dins(a1,DL(a1),&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc), dins(a2,DL(a2),&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc);</span>
-<span class="lineNum">     563 </span><span class="lineCov">          1 :   test_dcmp(d, l, e, DL(e)-1), r = dins(a1,DL(a1),&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc);</span>
-<span class="lineNum">     564 </span><span class="lineCov">          1 :   test(r, 4, &quot;should return prefix key&quot;), r = dins(a2,DL(a2),&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc);</span>
-<span class="lineNum">     565 </span><span class="lineCov">          1 :   test(r, 4, &quot;should return duplicated key&quot;), free(d), free(t), puts(&quot;&quot;);</span>
-<span class="lineNum">     566 </span><span class="lineCov">          1 : }</span>
-<span class="lineNum">     567 </span>            : 
-<span class="lineNum">     568 </span>            : void
-<span class="lineNum">     569 </span><span class="lineCov">          1 : test_dins6(void) {</span>
-<span class="lineNum">     570 </span><span class="lineCov">          1 :   dl_t l = 1, tl = 0, tc = 1;</span>
-<span class="lineNum">     571 </span><span class="lineCov">          2 :   d_t * d = dini(l); dt_t a[] = {1,2}, * t = dinl(tc); int r;</span>
-<span class="lineNum">     572 </span>            :   printf(&quot;test dins: given {1,2},{1,2}&quot;);
-<span class="lineNum">     573 </span><span class="lineCov">          1 :   dins(a,DL(a),&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc), r = dins(a,DL(a),&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc);</span>
-<span class="lineNum">     574 </span><span class="lineCov">          1 :   test(r, 4, &quot;should return duplicated key&quot;), free(d), free(t), puts(&quot;&quot;);</span>
-<span class="lineNum">     575 </span><span class="lineCov">          1 : }</span>
-<span class="lineNum">     576 </span>            : 
-<span class="lineNum">     577 </span>            : void
-<span class="lineNum">     578 </span><span class="lineCov">          1 : test_dlok1(void) {</span>
-<span class="lineNum">     579 </span><span class="lineCov">          1 :   dl_t l = 1, tl = 0, tc = 1;</span>
-<span class="lineNum">     580 </span><span class="lineCov">          2 :   d_t * d = dini(l); dt_t a1[] = {}, a2[] = {l+1}, * t = dinl(tc); int r;</span>
-<span class="lineNum">     581 </span><span class="lineCov">          1 :   printf(&quot;test dlok: given {}, {l+1}&quot;), r = dlok(a1,DL(a1),d,l,t);</span>
-<span class="lineNum">     582 </span><span class="lineCov">          1 :   test(r, 1, &quot;should return not found error&quot;), r = dlok(a2,DL(a2),d,l,t);</span>
-<span class="lineNum">     583 </span><span class="lineCov">          1 :   test(r, 2, &quot;should return key is out of bound error&quot;);</span>
-<span class="lineNum">     584 </span><span class="lineCov">          1 :   free(d), free(t), puts(&quot;&quot;);</span>
-<span class="lineNum">     585 </span><span class="lineCov">          1 : }</span>
-<span class="lineNum">     586 </span>            : 
-<span class="lineNum">     587 </span>            : void
-<span class="lineNum">     588 </span><span class="lineCov">          1 : test_dlok2(void) {</span>
-<span class="lineNum">     589 </span><span class="lineCov">          1 :   dl_t l = 1, tl = 0, tc = 1;</span>
-<span class="lineNum">     590 </span><span class="lineCov">          2 :   d_t * d = dini(l); dt_t a[] = {0}, * t = dinl(tc); int r;</span>
-<span class="lineNum">     591 </span>            :   printf(&quot;test dlok: given {0} when {0}&quot;);
-<span class="lineNum">     592 </span><span class="lineCov">          1 :   dins(a,DL(a),&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc), r = dlok(a,DL(a),d,l,t);</span>
-<span class="lineNum">     593 </span><span class="lineCov">          1 :   test(r, 0, &quot;should found the key&quot;), free(d), free(t), puts(&quot;&quot;);</span>
-<span class="lineNum">     594 </span><span class="lineCov">          1 : }</span>
-<span class="lineNum">     595 </span>            : 
-<span class="lineNum">     596 </span>            : void
-<span class="lineNum">     597 </span><span class="lineCov">          1 : test_dlok3(void) {</span>
-<span class="lineNum">     598 </span><span class="lineCov">          1 :   dl_t l = 1, tl = 0, tc = 1;</span>
-<span class="lineNum">     599 </span><span class="lineCov">          1 :   d_t * d = dini(l); dt_t a1[] = {0,1,2}, b1[] = {0}, b2[] = {0,1},</span>
-<span class="lineNum">     600 </span><span class="lineCov">          2 :       b3[] = {0,1,2,3}, * t = dinl(tc); int r;</span>
-<span class="lineNum">     601 </span>            :   printf(&quot;test dlok: given {0},{0,1},{0,1,2},{0,1,2,3} when {0,1,2}&quot;);
-<span class="lineNum">     602 </span><span class="lineCov">          1 :   dins(a1,DL(a1),&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc);</span>
-<span class="lineNum">     603 </span><span class="lineCov">          1 :   r = dlok(b1,DL(b1),d,l,t), test(r, 1, &quot;should return not found error&quot;);</span>
-<span class="lineNum">     604 </span><span class="lineCov">          1 :   r = dlok(b2,DL(b2),d,l,t), test(r, 1, &quot;should return not found error&quot;);</span>
-<span class="lineNum">     605 </span><span class="lineCov">          1 :   r = dlok(a1,DL(a1),d,l,t), test(r, 0, &quot;should found the key&quot;);</span>
-<span class="lineNum">     606 </span><span class="lineCov">          1 :   r = dlok(b3,DL(b3),d,l,t), test(r, 1, &quot;should return not found error&quot;);</span>
-<span class="lineNum">     607 </span><span class="lineCov">          1 :   free(d), free(t), puts(&quot;&quot;);</span>
-<span class="lineNum">     608 </span><span class="lineCov">          1 : }</span>
-<span class="lineNum">     609 </span>            : 
-<span class="lineNum">     610 </span>            : void
-<span class="lineNum">     611 </span><span class="lineCov">          1 : test_dlok4(void) {</span>
-<span class="lineNum">     612 </span><span class="lineCov">          1 :   dl_t l = 1, tl = 0, tc = 1;</span>
-<span class="lineNum">     613 </span><span class="lineCov">          1 :   d_t * d = dini(l); dt_t a1[] = {2,4,0}, a2[] = {4,1,0}, a3[] = {4,2,3,0},</span>
-<span class="lineNum">     614 </span><span class="lineCov">          2 :       b1[] = {1,3,0}, b2[] = {2,4}, b3[] = {4,1,3}, * t = dinl(tc); int r;</span>
-<span class="lineNum">     615 </span>            :   printf(&quot;test dlok: given {1,3,0},{2,4},{4,1,3} if {2,4,0},{4,1,0},{4,2,3,0}&quot;);
-<span class="lineNum">     616 </span><span class="lineCov">          1 :   dins(a1,DL(a1),&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc); dins(a2,DL(a2),&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc);</span>
-<span class="lineNum">     617 </span><span class="lineCov">          1 :   r = dins(a3,DL(a3),&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc);</span>
-<span class="lineNum">     618 </span><span class="lineCov">          1 :   r = dlok(b1,DL(b1),d,l,t), test(r, 1, &quot;should return not found error&quot;);</span>
-<span class="lineNum">     619 </span><span class="lineCov">          1 :   r = dlok(b2,DL(b2),d,l,t), test(r, 1, &quot;should return not found error&quot;);</span>
-<span class="lineNum">     620 </span><span class="lineCov">          1 :   r = dlok(b3,DL(b3),d,l,t), test(r, 1, &quot;should return not found error&quot;);</span>
-<span class="lineNum">     621 </span><span class="lineCov">          1 :   r = dlok(a1,DL(a1),d,l,t), test(r, 0, &quot;should found the key&quot;);</span>
-<span class="lineNum">     622 </span><span class="lineCov">          1 :   r = dlok(a2,DL(a2),d,l,t), test(r, 0, &quot;should found the key&quot;);</span>
-<span class="lineNum">     623 </span><span class="lineCov">          1 :   r = dlok(a3,DL(a3),d,l,t), test(r, 0, &quot;should found the key&quot;);</span>
-<span class="lineNum">     624 </span><span class="lineCov">          1 :   free(d), free(t), puts(&quot;&quot;);</span>
-<span class="lineNum">     625 </span><span class="lineCov">          1 : }</span>
-<span class="lineNum">     626 </span>            : 
-<span class="lineNum">     627 </span>            : /* Usage for evaluation: $ ./datrie input_file
-<span class="lineNum">     628 </span>            :  * File: datrie.c.in.1, The reserved words for Pascal
-<span class="lineNum">     629 </span>            :  * File: datrie.c.in.2, The reserved words for COBOL
-<span class="lineNum">     630 </span>            :  * File: datrie.c.in.3, A listing of Linux RPMs
-<span class="lineNum">     631 </span>            :  * File: datrie.c.in.4, First Level Administrations of All Countries
-<span class="lineNum">     632 </span>            :  * File: datrie.c.in.5,  
-<span class="lineNum">     633 </span>            :  */
-<span class="lineNum">     634 </span>            : 
-<span class="lineNum">     635 </span>            : void  /* m: max string length, e: elapsed time */
-<span class="lineNum">     636 </span><span class="lineNoCov">          0 : eval(int argc, char ** argv) { /* iw: insert worst time, ia: insert average T */</span>
-<span class="lineNum">     637 </span>            :   FILE * f; size_t i, j, k, l, m, n; clock_t e, iw, ia, lw, la;
-<span class="lineNum">     638 </span>            :   dl_t dl, tl, tc;
-<span class="lineNum">     639 </span>            :   d_t * d; dt_t * s, * t; int r, rt;
-<span class="lineNum">     640 </span><span class="lineNoCov">          0 :   f = fopen(argv[1], &quot;r&quot;); if (!f) { perror(argv[1]); return; }</span>
-<span class="lineNum">     641 </span>            :   for (iw = ia = lw = la = 0, k = 0, r = 0, n = 50;;) {
-<span class="lineNum">     642 </span><span class="lineNoCov">          0 :     if (fscanf(f, &quot;%zu%zu\n&quot;, &amp;l, &amp;m)-2) break;</span>
-<span class="lineNum">     643 </span><span class="lineNoCov">          0 :     dl = 1, tl = 0, tc = 1, d = dini(dl), t = dinl(tc);</span>
-<span class="lineNum">     644 </span><span class="lineNoCov">          0 :     s = calloc(m/sizeof(int)*sizeof(int)+(m%sizeof(int)?sizeof(int):0),1);</span>
-<span class="lineNum">     645 </span><span class="lineNoCov">          0 :     for (e = clock(), i = j = 0; i &lt; l; i++) {</span>
-<span class="lineNum">     646 </span><span class="lineNoCov">          0 :       if (fscanf(f, &quot;%[^\n]\n&quot;, s) == -1) { r = -1; break; }</span>
-<span class="lineNum">     647 </span><span class="lineNoCov">          0 :       if (r = dins(s,strlen(s)+1,&amp;d,&amp;dl,&amp;t,&amp;tl,&amp;tc)) break;</span>
-<span class="lineNum">     648 </span>            :       /*if (i &gt; j) putchar('i'), fflush(stdout), j += l / 10;*/
-<span class="lineNum">     649 </span>            :     }
-<span class="lineNum">     650 </span><span class="lineNoCov">          0 :     e = clock() - e, ia += e, e &gt; iw &amp;&amp; (iw = e), rewind(f);</span>
-<span class="lineNum">     651 </span>            :     /*printf(&quot;base %d\n&quot;, d[597].b);*/
-<span class="lineNum">     652 </span>            :     /*fda(&quot;datrie.debug.final&quot;, d, dl);*/
-<span class="lineNum">     653 </span><span class="lineNoCov">          0 :     if (fscanf(f, &quot;%zu%zu\n&quot;, &amp;l, &amp;m)-2) break;</span>
-<span class="lineNum">     654 </span><span class="lineNoCov">          0 :     for (e = clock(), i = j = 0; i &lt; l; i++) {</span>
-<span class="lineNum">     655 </span><span class="lineNoCov">          0 :       if (fscanf(f, &quot;%[^\n]\n&quot;, s) == -1) { r = -1; break; }</span>
-<span class="lineNum">     656 </span><span class="lineNoCov">          0 :       if (r = dlok(s,strlen(s)+1,d,dl,t)) break;</span>
-<span class="lineNum">     657 </span>            :       /*if (i &gt; j) putchar('l'), fflush(stdout), j += l / 10;*/
-<span class="lineNum">     658 </span>            :     }
-<span class="lineNum">     659 </span><span class="lineNoCov">          0 :     e = clock() - e, la += e, e &gt; lw &amp;&amp; (lw = e), rewind(f)/*, putchar('\n')*/;</span>
-<span class="lineNum">     660 </span><span class="lineNoCov">          0 :     if (++k &lt; n &amp;&amp; !r) free(d), free(t), free(s); else break;</span>
-<span class="lineNum">     661 </span><span class="lineNoCov">          0 :     putchar('.'), fflush(stdout);</span>
-<span class="lineNum">     662 </span><span class="lineNoCov">          0 :   }</span>
-<span class="lineNum">     663 </span>            :   putchar('\n');
-<span class="lineNum">     664 </span><span class="lineNoCov">          0 :   if (r) printf(&quot;return %d, i %zu  [%s]\n&quot;, r, i, s);</span>
-<span class="lineNum">     665 </span><span class="lineNoCov">          0 :   for (i = dl; i &gt; 0 &amp;&amp; d[i].c &lt; 0; i--); i++;</span>
-<span class="lineNum">     666 </span><span class="lineNoCov">          0 :   printf(&quot;KEY_NUM               %10zu\n&quot;</span>
-<span class="lineNum">     667 </span>            :          &quot;SPACE_DOUBLE          %10zu bytes\n&quot;
-<span class="lineNum">     668 </span>            :          &quot;SPACE_TAIL            %10zu bytes\n&quot;
-<span class="lineNum">     669 </span>            :          &quot;SPACE_DOUBLE_TAIL     %10zu bytes\n&quot;
-<span class="lineNum">     670 </span>            :          &quot;insert time - worst   %10lf ms\n&quot;
-<span class="lineNum">     671 </span>            :          &quot;insert time - average %10lf ms\n&quot;
-<span class="lineNum">     672 </span>            :          &quot;lookup time - worst   %10lf ms\n&quot;
-<span class="lineNum">     673 </span><span class="lineNoCov">          0 :          &quot;lookup time - average %10lf ms\n&quot;, l, i*DS, tl*DT, i*DS+tl*DT,</span>
-<span class="lineNum">     674 </span><span class="lineNoCov">          0 :          (double) iw * 1000 / CLOCKS_PER_SEC,</span>
-<span class="lineNum">     675 </span><span class="lineNoCov">          0 :          (double) ia * (1000 / n) / CLOCKS_PER_SEC,</span>
-<span class="lineNum">     676 </span><span class="lineNoCov">          0 :          (double) lw * 1000 / CLOCKS_PER_SEC,</span>
-<span class="lineNum">     677 </span><span class="lineNoCov">          0 :          (double) la * (1000 / n) / CLOCKS_PER_SEC);</span>
-<span class="lineNum">     678 </span><span class="lineNoCov">          0 :   free(d), free(t), free(s), fclose(f);</span>
-<span class="lineNum">     679 </span>            : }
-<a name="680"><span class="lineNum">     680 </span>            : </a>
-<span class="lineNum">     681 </span>            : int
-<span class="lineNum">     682 </span><span class="lineCov">          1 : main(int argc, char ** argv) {</span>
-<span class="lineNum">     683 </span><span class="lineCov">          1 :   if (argc &lt; 2) {</span>
-<span class="lineNum">     684 </span><span class="lineCov">          1 :     test_dini1();</span>
-<span class="lineNum">     685 </span><span class="lineCov">          1 :     test_dini2();</span>
-<span class="lineNum">     686 </span><span class="lineCov">          1 :     test_drea1();</span>
-<span class="lineNum">     687 </span><span class="lineCov">          1 :     test_drea2();</span>
-<span class="lineNum">     688 </span><span class="lineCov">          1 :     test_drea3();</span>
-<span class="lineNum">     689 </span><span class="lineCov">          1 :     test_dBas1();</span>
-<span class="lineNum">     690 </span><span class="lineCov">          1 :     test_dBas2();</span>
-<span class="lineNum">     691 </span><span class="lineCov">          1 :     test_dBas3();</span>
-<span class="lineNum">     692 </span><span class="lineCov">          1 :     test_dBas4();</span>
-<span class="lineNum">     693 </span><span class="lineCov">          1 :     test_dBas5();</span>
-<span class="lineNum">     694 </span><span class="lineCov">          1 :     test_dBas6();</span>
-<span class="lineNum">     695 </span><span class="lineCov">          1 :     test_dBas7();</span>
-<span class="lineNum">     696 </span><span class="lineCov">          1 :     test_dBas8();</span>
-<span class="lineNum">     697 </span><span class="lineCov">          1 :     test_dBas9();</span>
-<span class="lineNum">     698 </span><span class="lineCov">          1 :     test_dBas10();</span>
-<span class="lineNum">     699 </span><span class="lineCov">          1 :     test_dBas11();</span>
-<span class="lineNum">     700 </span><span class="lineCov">          1 :     test_drel1();</span>
-<span class="lineNum">     701 </span><span class="lineCov">          1 :     test_drel2();</span>
-<span class="lineNum">     702 </span><span class="lineCov">          1 :     test_drel3();</span>
-<span class="lineNum">     703 </span><span class="lineCov">          1 :     test_drel4();</span>
-<span class="lineNum">     704 </span><span class="lineCov">          1 :     test_drel5();</span>
-<span class="lineNum">     705 </span><span class="lineCov">          1 :     test_drel6();</span>
-<span class="lineNum">     706 </span><span class="lineCov">          1 :     test_drel7();</span>
-<span class="lineNum">     707 </span><span class="lineCov">          1 :     test_drel8();</span>
-<span class="lineNum">     708 </span><span class="lineCov">          1 :     test_dral1();</span>
-<span class="lineNum">     709 </span><span class="lineCov">          1 :     test_dral2();</span>
-<span class="lineNum">     710 </span><span class="lineCov">          1 :     test_dins1();</span>
-<span class="lineNum">     711 </span><span class="lineCov">          1 :     test_dins2();</span>
-<span class="lineNum">     712 </span><span class="lineCov">          1 :     test_dins3();</span>
-<span class="lineNum">     713 </span><span class="lineCov">          1 :     test_dins4();</span>
-<span class="lineNum">     714 </span><span class="lineCov">          1 :     test_dins5();</span>
-<span class="lineNum">     715 </span><span class="lineCov">          1 :     test_dins6();</span>
-<span class="lineNum">     716 </span><span class="lineCov">          1 :     test_dlok1();</span>
-<span class="lineNum">     717 </span><span class="lineCov">          1 :     test_dlok2();</span>
-<span class="lineNum">     718 </span><span class="lineCov">          1 :     test_dlok3();</span>
-<span class="lineNum">     719 </span><span class="lineCov">          1 :     test_dlok4();</span>
-<span class="lineNum">     720 </span>            :   } else {
-<span class="lineNum">     721 </span><span class="lineNoCov">          0 :     eval(argc, argv);</span>
-<span class="lineNum">     722 </span>            :   }
-<span class="lineNum">     723 </span><span class="lineCov">          1 :   return 0;</span>
-<span class="lineNum">     724 </span>            : }
+<span class="lineNum">      14 </span>            : typedef unsigned char dt_t;
+<span class="lineNum">      15 </span>            : typedef int dd_t;
+<span class="lineNum">      16 </span>            : /*                    *//* dt_t: If your character is ascii code, use char    */
+<span class="lineNum">      17 </span>            : #define DS sizeof(d_t)  /*       If it is binary(eg. utf8), use unsigned char */
+<span class="lineNum">      18 </span>            : #define DT sizeof(dt_t) /*       If it is unicode point, use unsigned short   */
+<span class="lineNum">      19 </span>            : #define DD sizeof(dd_t) /*       The default is unsigned char                 */
+<span class="lineNum">      20 </span>            : #define DX SMAXT(dl_t)  /*       0xFF..FF(-1) is used as terminator in tail,  */
+<span class="lineNum">      21 </span>            : #define DM UMAXT(dt_t)  /*       so -1 can not be used as character value     */
+<a name="22"><span class="lineNum">      22 </span>            : /*                    *//* dd_t: Depending on what user want to stored,       */</a>
+<span class="lineNum">      23 </span>            : d_t * /*              *//*       the value can be a number or a struct,       */
+<span class="lineNum">      24 </span><span class="lineCov">         24 : dini(dl_t l) { /*     *//*       and its size can vary from 1 to 8 or more    */</span>
+<span class="lineNum">      25 </span><span class="lineCov">         24 :   if (!l) return 0; /**//*       bytes. The default is int                    */</span>
+<span class="lineNum">      26 </span><span class="lineCov">         23 :   d_t * d = malloc(l*DS+DS); dl_t i;</span>
+<span class="lineNum">      27 </span><span class="lineCov">         23 :   for (d[0] = (d_t){0,-1}, i = 1; d[i] = (d_t){i-1,-i-1}, i != l; i++);</span>
+<span class="lineNum">      28 </span><span class="lineCov">         23 :   return d[1].b = l, d[l].c = -1, d;</span>
+<span class="lineNum">      29 </span>            : }
+<a name="30"><span class="lineNum">      30 </span>            : </a>
+<span class="lineNum">      31 </span>            : int
+<span class="lineNum">      32 </span><span class="lineCov">         17 : drea(d_t ** d, dl_t * l) {</span>
+<span class="lineNum">      33 </span><span class="lineCov">         17 :   dl_t i, b = *l, e, f, m; d_t * n = *d;</span>
+<span class="lineNum">      34 </span><span class="lineCov">         17 :   if (b &gt; DX - b || !(e = b*2+1, i = ++b)) return 1; /* len is max */</span>
+<span class="lineNum">      35 </span><span class="lineCov">         17 :   if (!(n = realloc(n, DS*(*l = e)+DS))) return 2; /* realloc error */</span>
+<span class="lineNum">      36 </span><span class="lineCov">         17 :   for (*d = n, f = n-&gt;c; n[i] = (d_t){i-1,-i-1}, i != e; i++);</span>
+<span class="lineNum">      37 </span><span class="lineCov">         17 :   m = f ? (n[n[b].b = n[-f].b].c = -b, -f) : (n-&gt;c = -b, b);</span>
+<span class="lineNum">      38 </span><span class="lineCov">         17 :   n[n[m].b = e].c = -m;</span>
+<span class="lineNum">      39 </span><span class="lineCov">         17 :   return 0;</span>
+<span class="lineNum">      40 </span>            : }
+<a name="41"><span class="lineNum">      41 </span>            : </a>
+<span class="lineNum">      42 </span>            : int
+<span class="lineNum">      43 </span><span class="lineNoCov">          0 : dbas(dl_t * a, dl_t n, d_t ** d, dl_t * l) {</span>
+<span class="lineNum">      44 </span><span class="lineNoCov">          0 :   int e = 0; dl_t i = 0, j = 1, w;</span>
+<span class="lineNum">      45 </span><span class="lineNoCov">          0 :   for (; (-i[*d].c &gt; i || !(e=drea(d,l))) &amp;&amp; (i = -i[*d].c) &lt; a[0];);</span>
+<span class="lineNum">      46 </span><span class="lineNoCov">          0 :   for (; !e &amp; j &lt; n &amp;&amp; (-i[*d].c &gt; i || !(e=drea(d,l))); j&lt;n &amp;&amp;(i=-i[*d].c))</span>
+<span class="lineNum">      47 </span><span class="lineNoCov">          0 :     for (j = 1; j &lt; n; j++) {</span>
+<span class="lineNum">      48 </span><span class="lineNoCov">          0 :       for (w = a[j]-a[0]; w &gt; *l-i;) if (e = drea(d, l)) return -e;</span>
+<span class="lineNum">      49 </span><span class="lineNoCov">          0 :       if ((*d)[i+w].c &gt;= 0) break;</span>
+<span class="lineNum">      50 </span>            :     }
+<span class="lineNum">      51 </span><span class="lineNoCov">          0 :   return e ? -e : i-a[0];</span>
+<span class="lineNum">      52 </span>            : }
+<a name="53"><span class="lineNum">      53 </span>            : </a>
+<span class="lineNum">      54 </span>            : int /* faster */
+<span class="lineNum">      55 </span><span class="lineCov">         15 : dBas(dl_t * a, dl_t n, d_t ** d, dl_t * l) {</span>
+<span class="lineNum">      56 </span><span class="lineCov">         15 :   int e = 0; dl_t i = 0, j, b, w;</span>
+<span class="lineNum">      57 </span>            :   for (;;) {
+<span class="lineNum">      58 </span><span class="lineCov">         25 :     if (-i[*d].c &lt;= i &amp;&amp; (e = drea(d,l))) return -e;</span>
+<span class="lineNum">      59 </span><span class="lineCov">         25 :     if ((b = (i = -i[*d].c) - a[0]) &gt;= 0) if (n == 1) return b; else break;</span>
+<span class="lineNum">      60 </span>            :   }
+<span class="lineNum">      61 </span><span class="lineCov">          4 :   for (;; b = (i = -i[*d].c) - a[0]) {</span>
+<span class="lineNum">      62 </span><span class="lineCov">         12 :     if (-i[*d].c &lt;= i &amp;&amp; (e = drea(d,l))) return -e;</span>
+<span class="lineNum">      63 </span>            :     for (j = 1;;) {
+<span class="lineNum">      64 </span><span class="lineCov">         14 :       for (w = a[j]; w &gt; *l-b;) if (e = drea(d, l)) return -e;</span>
+<span class="lineNum">      65 </span><span class="lineCov">         14 :       if ((*d)[b+w].c &gt;= 0) break;</span>
+<span class="lineNum">      66 </span><span class="lineCov">         10 :       if (++j == n) return b;</span>
+<span class="lineNum">      67 </span>            :     }
+<span class="lineNum">      68 </span><span class="lineCov">          4 :   }</span>
+<span class="lineNum">      69 </span>            : }
+<a name="70"><span class="lineNum">      70 </span>            : </a>
+<span class="lineNum">      71 </span>            : void
+<span class="lineNum">      72 </span><span class="lineCov">         11 : drel(dl_t s, dl_t b, dl_t nb, dl_t * a, dl_t n, d_t * d, dl_t l) {</span>
+<span class="lineNum">      73 </span><span class="lineCov">         11 :   dl_t i, j = 0, m, c, t, u, kb, k, p, h, e, x; /* e: end, x: max size */</span>
+<span class="lineNum">      74 </span><span class="lineCov">         27 :   for (d[s].b = nb, i = 0; i &lt; n; i++) {</span>
+<span class="lineNum">      75 </span><span class="lineCov">         16 :     t = b + (c = a[i]), u = nb + c, d[p = d[u].b].c = k = d[u].c, d[-k].b = p,</span>
+<span class="lineNum">      76 </span><span class="lineCov">         16 :     p &gt; u &amp;&amp; (d-&gt;c = k) || p == u &amp;&amp; (d-&gt;c = 0), d[u] = (d_t){kb = d[t].b,s};</span>
+<span class="lineNum">      77 </span><span class="lineCov">         16 :     for (; (k = -d[j].c) &gt; j &amp;&amp; k &lt; t; j = k);</span>
+<span class="lineNum">      78 </span><span class="lineCov">         16 :     if (j) d[d[k].b = t] = (d_t){j,-k}, d[j].c = -t;</span>
+<span class="lineNum">      79 </span><span class="lineCov">          5 :     else if (k) d[e = d[k].b, d[k].b = t] = (d_t){e,-k}, d[e].c = d-&gt;c = -t;</span>
+<span class="lineNum">      80 </span><span class="lineCov">          2 :     else d[t] = (d_t){t,d-&gt;c = -t};</span>
+<span class="lineNum">      81 </span><span class="lineCov">        618 :     if (j = t, kb &gt;= 0) for (x = DM + (DX &gt; DM), m = 1; d[h = kb+m].c == t &amp;&amp;</span>
+<span class="lineNum">      82 </span><span class="lineCov">        303 :                              (d[h].c = u), m != x &amp;&amp; h != l; m++);</span>
+<span class="lineNum">      83 </span>            :   }
+<span class="lineNum">      84 </span><span class="lineCov">         11 : }</span>
+<a name="85"><span class="lineNum">      85 </span>            : </a>
+<span class="lineNum">      86 </span>            : dt_t *
+<span class="lineNum">      87 </span><span class="lineCov">         13 : dinl(dl_t c) { return calloc(DT, c); }</span>
+<a name="88"><span class="lineNum">      88 </span>            : </a>
+<span class="lineNum">      89 </span>            : int
+<span class="lineNum">      90 </span><span class="lineCov">         41 : dral(dt_t ** t, dl_t * c) {</span>
+<span class="lineNum">      91 </span><span class="lineCov">         41 :   dt_t * n; dl_t b = *c, e;</span>
+<span class="lineNum">      92 </span><span class="lineCov">         41 :   if (*c &gt; DX - *c) return 3; /* no enough space to add tail */</span>
+<span class="lineNum">      93 </span><span class="lineCov">         41 :   if (n = realloc(*t, DT*(e = *c&lt;&lt;=1))) *t = n; else return 2;</span>
+<span class="lineNum">      94 </span><span class="lineCov">         41 :   for (; b &lt; e; b++) n[b] = 0;</span>
+<span class="lineNum">      95 </span>            :   return 0;
+<span class="lineNum">      96 </span>            : }
+<span class="lineNum">      97 </span>            : 
+<span class="lineNum">      98 </span>            : #define DBAS(a, n) do {if ((nb = dBas(a,n,&amp;d,l))&lt;0) return -nb;*rd = d;}while(0)
+<span class="lineNum">      99 </span>            : #define DJMP(nb, tc) t = nb + tc, d[p = d[t].b].c = k = d[t].c, d[-k].b = p, \
+<span class="lineNum">     100 </span>            :                      p &gt; t &amp;&amp; (d-&gt;c = k) || p == t &amp;&amp; (d-&gt;c = 0), d[t].c = s
+<span class="lineNum">     101 </span>            : #define DSTR(a, n) do { for (x += y, j = 0; j &lt; n &amp;&amp; (j[x] = j[a] + 1); j++); \
+<span class="lineNum">     102 </span>            :                         *(dd_t*)(x+n+1)=g, *vl+=n+1+DD, d[t].b = ~y; } while(0)
+<a name="103"><span class="lineNum">     103 </span>            : </a>
+<span class="lineNum">     104 </span>            : int /* v: tail, u: max, g: data, r: remain */
+<span class="lineNum">     105 </span><span class="lineCov">         24 : dins(dt_t *a, dl_t n, dd_t g, d_t **rd, dl_t *l, dt_t **v, dl_t *vl, dl_t *vc) {</span>
+<span class="lineNum">     106 </span>            :   dl_t i,j,s,c,tc,b,nb,t,k,m,p, y,w, h,h1[DM],h2[DM],l1,l2,li, *z, u, r;
+<span class="lineNum">     107 </span>            :   d_t *d; int e; dt_t *x;
+<span class="lineNum">     108 </span><span class="lineCov">         24 :   for (i = 0, s = 0, x = *v, y = *vl, d = *rd;;) {</span>
+<span class="lineNum">     109 </span><span class="lineCov">         36 :     if ((b = d[s].b) &lt; 0) { /* a[i](signed) should &lt; DM */</span>
+<span class="lineNum">     110 </span><span class="lineCov">          6 :       for (x += ~b, a += i, n -= i, j = 0;;) {</span>
+<span class="lineNum">     111 </span><span class="lineCov">          8 :         if (j == n) return x[n] != 0 || (*(dd_t*)(x+n+1)=g),4;</span>
+<span class="lineNum">     112 </span><span class="lineCov">          6 :         if (tc = x[j], c = a[j++]+1, tc != c) break;</span>
+<span class="lineNum">     113 </span><span class="lineCov">          2 :         z = (dl_t[]){c}; DBAS(z, 1); d[s].b = nb, DJMP(nb, c), s = t;</span>
+<span class="lineNum">     114 </span><span class="lineCov">          2 :       }</span>
+<span class="lineNum">     115 </span><span class="lineCov">          4 :       for (x=*v; n&gt;=(r=*vc-y) || n+DD&gt;=r;) if (e=dral(v,vc),x=*v,e) return e;</span>
+<span class="lineNum">     116 </span><span class="lineCov">          4 :       if (tc) { z = (dl_t[]){tc,c}; DBAS(z, 2); DJMP(nb, tc), d[t].b = b-j; }</span>
+<span class="lineNum">     117 </span><span class="lineCov">          2 :       else    { z = (dl_t[]){c};    DBAS(z, 1); }</span>
+<span class="lineNum">     118 </span><span class="lineCov">          4 :       d[s].b = nb, DJMP(nb, c), a += j, n -= j; DSTR(a, n); return 0;</span>
+<span class="lineNum">     119 </span>            :     }
+<span class="lineNum">     120 </span><span class="lineCov">         30 :     if (i == n) return 4; /* the inserted key is a prefix of another key */</span>
+<span class="lineNum">     121 </span><span class="lineCov">         29 :     for (c = a[i++] + 1; c &gt; *l-b;) if (e = drea(rd, l), d = *rd, e) return -e;</span>
+<span class="lineNum">     122 </span><span class="lineCov">         29 :     if ((k = d[t = b + c].c) != s) {</span>
+<span class="lineNum">     123 </span><span class="lineCov">         17 :       for (w=n-i; w&gt;=(r=*vc-y) || w+DD&gt;=r;) if (e=dral(v,vc),x=*v,e) return e;</span>
+<span class="lineNum">     124 </span><span class="lineCov">         17 :       if (k &gt;= 0 &amp;&amp; (u = DM + (DX &gt; DM))) {</span>
+<span class="lineNum">     125 </span><span class="lineCov">         58 :         for (l1 = 0, j = 1; (d[h = b+j].c == s || j == c &amp;&amp; (li = l1, 1)) &amp;&amp;</span>
+<span class="lineNum">     126 </span><span class="lineCov">         34 :              (h1[l1++] = j), j != u &amp;&amp; h != *l; j++);</span>
+<span class="lineNum">     127 </span><span class="lineCov">         55 :         for (l2 = 0, j = 1, m = d[k].b; d[h = m+j].c == k &amp;&amp; (h2[l2++] = j),</span>
+<span class="lineNum">     128 </span><span class="lineCov">         49 :              j != u &amp;&amp; h != *l; j++);</span>
+<span class="lineNum">     129 </span><span class="lineCov">          3 :         if (l1 &lt;= l2) {</span>
+<span class="lineNum">     130 </span><span class="lineCov">          1 :           DBAS(h1, l1);</span>
+<span class="lineNum">     131 </span><span class="lineCov">          1 :           for (j = li+1; j &lt; l1; j++) h1[j-1] = h1[j];</span>
+<span class="lineNum">     132 </span><span class="lineCov">          1 :           drel(s, b, nb, h1, --l1, d, *l), b = nb;</span>
+<span class="lineNum">     133 </span>            :         } else {
+<span class="lineNum">     134 </span><span class="lineCov">          2 :           DBAS(h2, l2);</span>
+<span class="lineNum">     135 </span><span class="lineCov">          2 :           drel(k, m, nb, h2, l2, d, *l), s = d[b+(h1[0] == c ? h1[1]:h1[0])].c;</span>
+<span class="lineNum">     136 </span>            :         }
+<span class="lineNum">     137 </span>            :       }
+<span class="lineNum">     138 </span><span class="lineCov">         17 :       DJMP(b, c), a += i; DSTR(a, w); return 0;</span>
+<span class="lineNum">     139 </span>            :     }
+<span class="lineNum">     140 </span>            :     s = t; /* success */
+<span class="lineNum">     141 </span>            :   }
+<span class="lineNum">     142 </span>            : }
+<a name="143"><span class="lineNum">     143 </span>            : </a>
+<span class="lineNum">     144 </span>            : int /* g: data */
+<span class="lineNum">     145 </span><span class="lineCov">         13 : dlok(dt_t * a, dl_t n, dd_t * g, d_t * d, dl_t l, dt_t * v) {</span>
+<span class="lineNum">     146 </span><span class="lineCov">         13 :   dl_t i = 0, j, s = 0, c, b, t;</span>
+<span class="lineNum">     147 </span>            :   for (;; s = t) {
+<span class="lineNum">     148 </span><span class="lineCov">         37 :     if ((b = d[s].b) &lt; 0) for (v += ~b, a += i, n -= i, j = 0;; j++)</span>
+<span class="lineNum">     149 </span><span class="lineCov">         21 :       if (j == n) return v[n] != 0 || (*g = *(dd_t*)(v+n+1),0);</span>
+<span class="lineNum">     150 </span><span class="lineCov">         13 :       else if (v[j] != a[j] + 1) return 1;</span>
+<span class="lineNum">     151 </span><span class="lineCov">         11 :     if (i == n) return 1; /* the inserted key is a prefix of another key */</span>
+<span class="lineNum">     152 </span><span class="lineCov">         15 :     if ((c = a[i++] + 1) &gt; l-b) return 2;  /* a[i](signed) should &lt; DM */</span>
+<span class="lineNum">     153 </span><span class="lineCov">         14 :     if (d[t = b + c].c != s) return 1;</span>
+<span class="lineNum">     154 </span>            :   }
+<span class="lineNum">     155 </span>            : }
+<span class="lineNum">     156 </span>            : 
+<span class="lineNum">     157 </span>            : const char * const DR[] = {&quot;success&quot;, &quot;len is max&quot;, &quot;realloc err&quot;,
+<span class="lineNum">     158 </span>            :   &quot;no enough space to add tail&quot;, &quot;the inserted key is a prefix or duplicated&quot;};
+<a name="159"><span class="lineNum">     159 </span>            : </a>
+<span class="lineNum">     160 </span>            : int
+<span class="lineNum">     161 </span><span class="lineNoCov">          0 : wda(FILE * f, char * s, d_t * d, dl_t l) {</span>
+<span class="lineNum">     162 </span>            :   int j, k;
+<span class="lineNum">     163 </span><span class="lineNoCov">          0 :   for (s &amp;&amp; puts(s), j = 0;;) {</span>
+<span class="lineNum">     164 </span><span class="lineNoCov">          0 :     for (k = 0; fprintf(f, &quot;%5d&quot;, j+k), k &lt; 31 &amp;&amp; j+k &lt; l; k++); fputc('\n', f);</span>
+<span class="lineNum">     165 </span><span class="lineNoCov">          0 :     for (k = 0; fprintf(f, &quot;-----&quot;), k &lt; 31 &amp;&amp; j+k &lt; l; k++); fputc('\n', f);</span>
+<span class="lineNum">     166 </span><span class="lineNoCov">          0 :     for (k = 0; fprintf(f, &quot;%5d&quot;, d[j+k].b), k &lt; 31 &amp;&amp; j+k &lt; l; k++);</span>
+<span class="lineNum">     167 </span><span class="lineNoCov">          0 :     fputc('\n', f);</span>
+<span class="lineNum">     168 </span><span class="lineNoCov">          0 :     for (k = 0; fprintf(f, &quot;%5d&quot;, d[j+k].c), k &lt; 31 &amp;&amp; j+k &lt; l; k++);</span>
+<span class="lineNum">     169 </span><span class="lineNoCov">          0 :     fputc('\n', f), fputc('\n', f);</span>
+<span class="lineNum">     170 </span><span class="lineNoCov">          0 :     if ((j+=k+1)-1 == l) break;</span>
+<span class="lineNum">     171 </span>            :   }
+<span class="lineNum">     172 </span><span class="lineNoCov">          0 : }</span>
+<a name="173"><span class="lineNum">     173 </span>            : </a>
+<span class="lineNum">     174 </span>            : int
+<span class="lineNum">     175 </span><span class="lineNoCov">          0 : fda(char * s, d_t * d, dl_t l) {</span>
+<span class="lineNum">     176 </span><span class="lineNoCov">          0 :   FILE * f = fopen(s, &quot;w&quot;); wda(f, 0, d, l), fclose(f);</span>
+<span class="lineNum">     177 </span><span class="lineNoCov">          0 : }</span>
+<a name="178"><span class="lineNum">     178 </span>            : </a>
+<span class="lineNum">     179 </span>            : int
+<span class="lineNum">     180 </span><span class="lineNoCov">          0 : pda(char * s, d_t * d, dl_t l) { wda(stdout, s, d, l); return 0; }</span>
+<span class="lineNum">     181 </span>            : 
+<span class="lineNum">     182 </span>            : #define DL(a) (sizeof(a)/sizeof(*a))
+<span class="lineNum">     183 </span>            : #define GOOD &quot;\e[1;32mgood\e[0m&quot;
+<span class="lineNum">     184 </span>            : #define BAD &quot;\e[1;31mbad\e[0m&quot;
+<a name="185"><span class="lineNum">     185 </span>            : </a>
+<span class="lineNum">     186 </span>            : int /* r: return, e: expected, m: message */
+<span class="lineNum">     187 </span><span class="lineCov">         31 : test(int r, int e, const char * m) {</span>
+<span class="lineNum">     188 </span><span class="lineCov">         31 :   if (r == e) {</span>
+<span class="lineNum">     189 </span><span class="lineCov">         26 :     printf(&quot;  &quot;GOOD); return 0;</span>
+<span class="lineNum">     190 </span>            :   } else {
+<span class="lineNum">     191 </span><span class="lineCov">         10 :     printf(&quot;\n  &quot;BAD), m &amp;&amp; printf(&quot;  %s&quot;, m) ||</span>
+<span class="lineNum">     192 </span>            :     printf(&quot;  %d should eq %d&quot;, r, e); return 1;
+<span class="lineNum">     193 </span>            :   }
+<span class="lineNum">     194 </span>            : }
+<span class="lineNum">     195 </span>            : 
+<span class="lineNum">     196 </span>            : void
+<span class="lineNum">     197 </span><span class="lineCov">         22 : test_dcmp(d_t * a, dl_t al, d_t * b, dl_t bl) {</span>
+<span class="lineNum">     198 </span><span class="lineCov">         22 :   int e = 1; dl_t i;</span>
+<span class="lineNum">     199 </span><span class="lineCov">         22 :   if (al == bl)</span>
+<span class="lineNum">     200 </span><span class="lineCov">        381 :     for (i = 0; ; i++) {</span>
+<span class="lineNum">     201 </span><span class="lineCov">        403 :       if (a[i].b != b[i].b || a[i].c != b[i].c) {</span>
+<span class="lineNum">     202 </span>            :         e = 0;
+<span class="lineNum">     203 </span>            :         break;
+<span class="lineNum">     204 </span>            :       }
+<span class="lineNum">     205 </span><span class="lineCov">        403 :       if (i == al) break;</span>
+<span class="lineNum">     206 </span><span class="lineCov">        381 :     }</span>
+<span class="lineNum">     207 </span>            :   else e = 0;
+<span class="lineNum">     208 </span><span class="lineCov">         44 :   e &amp;&amp; printf(&quot;  &quot;GOOD) || (pda(&quot;\n  &quot;BAD, a, al), pda(&quot;\n  should eq&quot;, b, bl));</span>
+<span class="lineNum">     209 </span><span class="lineCov">         22 : }</span>
+<a name="210"><span class="lineNum">     210 </span>            : </a>
+<span class="lineNum">     211 </span>            : void
+<span class="lineNum">     212 </span><span class="lineCov">          1 : test_dini1(void) {</span>
+<span class="lineNum">     213 </span><span class="lineCov">          1 :   dl_t l = 0; d_t * d = dini(l);</span>
+<span class="lineNum">     214 </span>            :   printf(&quot;test dini: cannot init with len = 0&quot;);
+<span class="lineNum">     215 </span><span class="lineCov">          1 :   test(d == 0, 1, &quot;the pointer of double array should eq 0&quot;), puts(&quot;&quot;);</span>
+<span class="lineNum">     216 </span><span class="lineCov">          1 : }</span>
+<a name="217"><span class="lineNum">     217 </span>            : </a>
+<span class="lineNum">     218 </span>            : void
+<span class="lineNum">     219 </span><span class="lineCov">          1 : test_dini2(void) {</span>
+<span class="lineNum">     220 </span><span class="lineCov">          1 :   dl_t l = 1; d_t * d = dini(l), e[] = {{0,-1},{1,-1}};</span>
+<span class="lineNum">     221 </span>            :   printf(&quot;test dini: can init with len &gt;= 1&quot;);
+<span class="lineNum">     222 </span><span class="lineCov">          1 :   test_dcmp(d, l, e, DL(e)-1), free(d), puts(&quot;&quot;);</span>
+<span class="lineNum">     223 </span><span class="lineCov">          1 : }</span>
+<a name="224"><span class="lineNum">     224 </span>            : </a>
+<span class="lineNum">     225 </span>            : void
+<span class="lineNum">     226 </span><span class="lineCov">          1 : test_drea1(void) {</span>
+<span class="lineNum">     227 </span><span class="lineCov">          1 :   dl_t l = 1; d_t * d = dini(l), e[] = {{0,-1},{3,-2},{1,-3},{2,-1}};</span>
+<span class="lineNum">     228 </span><span class="lineCov">          1 :   printf(&quot;test drea: no cells occupied&quot;), drea(&amp;d, &amp;l);</span>
+<span class="lineNum">     229 </span><span class="lineCov">          1 :   test_dcmp(d, l, e, DL(e)-1), free(d), puts(&quot;&quot;);</span>
+<span class="lineNum">     230 </span><span class="lineCov">          1 : }</span>
+<a name="231"><span class="lineNum">     231 </span>            : </a>
+<span class="lineNum">     232 </span>            : void
+<span class="lineNum">     233 </span><span class="lineCov">          1 : test_drea2(void) {</span>
+<span class="lineNum">     234 </span><span class="lineCov">          1 :   dl_t l = 3; d_t * d = dini(l), e[] = {{0,-1},{7,-2},{1,-4},{0,0},</span>
+<span class="lineNum">     235 </span>            :     {2,-5},{4,-6},{5,-7},{6,-1}};
+<span class="lineNum">     236 </span><span class="lineCov">          1 :   printf(&quot;test drea: last cell occupied&quot;), d[1].b = 2, d[3] = (d_t){0,0};</span>
+<span class="lineNum">     237 </span><span class="lineCov">          1 :   drea(&amp;d, &amp;l), test_dcmp(d, l, e, DL(e)-1), free(d), puts(&quot;&quot;);</span>
+<span class="lineNum">     238 </span><span class="lineCov">          1 : }</span>
+<a name="239"><span class="lineNum">     239 </span>            : </a>
+<span class="lineNum">     240 </span>            : void
+<span class="lineNum">     241 </span><span class="lineCov">          1 : test_drea3(void) {</span>
+<span class="lineNum">     242 </span><span class="lineCov">          1 :   dl_t l = 1; d_t * d = dini(l), e[] = {{0,-2},{0,0},{3,-3},{2,-2}};</span>
+<span class="lineNum">     243 </span><span class="lineCov">          1 :   printf(&quot;test drea: all cells occupied&quot;), d[0].c = 0, d[1] = (d_t){0,0};</span>
+<span class="lineNum">     244 </span><span class="lineCov">          1 :   drea(&amp;d, &amp;l), test_dcmp(d, l, e, DL(e)-1), free(d), puts(&quot;&quot;);</span>
+<span class="lineNum">     245 </span><span class="lineCov">          1 : }</span>
+<a name="246"><span class="lineNum">     246 </span>            : </a>
+<span class="lineNum">     247 </span>            : void
+<span class="lineNum">     248 </span><span class="lineCov">          1 : test_dBas1(void) {</span>
+<span class="lineNum">     249 </span><span class="lineCov">          1 :   dl_t l = 1, a[] = {0}, n = DL(a); d_t * d = dini(l); int r;</span>
+<span class="lineNum">     250 </span><span class="lineCov">          1 :   printf(&quot;test dBas: given {0}&quot;), r = dBas(a, n, &amp;d, &amp;l);</span>
+<span class="lineNum">     251 </span><span class="lineCov">          1 :   test(r, 1, &quot;base should eq 1&quot;), free(d), puts(&quot;&quot;);</span>
+<span class="lineNum">     252 </span><span class="lineCov">          1 : }</span>
+<a name="253"><span class="lineNum">     253 </span>            : </a>
+<span class="lineNum">     254 </span>            : void
+<span class="lineNum">     255 </span><span class="lineCov">          1 : test_dBas2(void) {</span>
+<span class="lineNum">     256 </span><span class="lineCov">          1 :   dl_t l = 1, a[] = {1}, n = DL(a); d_t * d = dini(l); int r;</span>
+<span class="lineNum">     257 </span><span class="lineCov">          1 :   printf(&quot;test dBas: given {1}&quot;), r = dBas(a, n, &amp;d, &amp;l);</span>
+<span class="lineNum">     258 </span><span class="lineCov">          1 :   test(r, 0, &quot;base should eq 0&quot;), free(d), puts(&quot;&quot;);</span>
+<span class="lineNum">     259 </span><span class="lineCov">          1 : }</span>
+<a name="260"><span class="lineNum">     260 </span>            : </a>
+<span class="lineNum">     261 </span>            : void
+<span class="lineNum">     262 </span><span class="lineCov">          1 : test_dBas3(void) {</span>
+<span class="lineNum">     263 </span><span class="lineCov">          1 :   dl_t l = 1, a[] = {2}, n = DL(a); d_t * d = dini(l);</span>
+<span class="lineNum">     264 </span><span class="lineCov">          1 :   printf(&quot;test dBas: given {2} when len &lt; 2&quot;), dBas(a, n, &amp;d, &amp;l);</span>
+<span class="lineNum">     265 </span><span class="lineCov">          1 :   test(l, 3, &quot;len should eq 3&quot;), free(d), puts(&quot;&quot;);</span>
+<span class="lineNum">     266 </span><span class="lineCov">          1 : }</span>
+<span class="lineNum">     267 </span>            : 
+<span class="lineNum">     268 </span>            : #define DI SMAXT(dt_t)
+<a name="269"><span class="lineNum">     269 </span>            : </a>
+<span class="lineNum">     270 </span>            : void
+<span class="lineNum">     271 </span><span class="lineCov">          1 : test_dBas4(void) {</span>
+<span class="lineNum">     272 </span>            :   dl_t l; d_t * d; int r;
+<span class="lineNum">     273 </span>            :   printf(&quot;test dBas: given {MAX}&quot;);
+<span class="lineNum">     274 </span><span class="lineCov">          1 :   if (!test(DX == DI, 1, &quot;this test should be run with sizeof dl_t == dt_t&quot;)) {</span>
+<span class="lineNum">     275 </span><span class="lineNoCov">          0 :     l = 1, d = dini(l), r = dBas((dl_t[]){DI}, 1, &amp;d, &amp;l);</span>
+<span class="lineNum">     276 </span><span class="lineNoCov">          0 :     test(r, 0, &quot;base should eq 0&quot;), free(d);</span>
+<span class="lineNum">     277 </span>            :   }
+<span class="lineNum">     278 </span><span class="lineCov">          1 :   puts(&quot;&quot;);</span>
+<span class="lineNum">     279 </span><span class="lineCov">          1 : }</span>
+<a name="280"><span class="lineNum">     280 </span>            : </a>
+<span class="lineNum">     281 </span>            : void
+<span class="lineNum">     282 </span><span class="lineCov">          1 : test_dBas5(void) {</span>
+<span class="lineNum">     283 </span>            :   dl_t l; d_t * d; int r;
+<span class="lineNum">     284 </span>            :   printf(&quot;test dBas: given {MAX} when last cell is occupied&quot;);
+<span class="lineNum">     285 </span><span class="lineCov">          1 :   if (!test(DX == DI, 1, &quot;this test should be run with sizeof dl_t == dt_t&quot;)) {</span>
+<span class="lineNum">     286 </span><span class="lineNoCov">          0 :     l = DI, d = dini(l), d[1].b = l-1, d[l-1].c = -1, d[l].c = 0;</span>
+<span class="lineNum">     287 </span><span class="lineNoCov">          0 :     r = dBas((dl_t[]){DI}, 1, &amp;d, &amp;l);</span>
+<span class="lineNum">     288 </span><span class="lineNoCov">          0 :     test(r, -1, &quot;should return error: len is max&quot;), free(d);</span>
+<span class="lineNum">     289 </span>            :   }
+<span class="lineNum">     290 </span><span class="lineCov">          1 :   puts(&quot;&quot;);</span>
+<span class="lineNum">     291 </span><span class="lineCov">          1 : }</span>
+<a name="292"><span class="lineNum">     292 </span>            : </a>
+<span class="lineNum">     293 </span>            : void
+<span class="lineNum">     294 </span><span class="lineCov">          1 : test_dBas6(void) {</span>
+<span class="lineNum">     295 </span><span class="lineCov">          1 :   dl_t l = 3, a[] = {1,2}, n = DL(a); d_t * d = dini(l); int r;</span>
+<span class="lineNum">     296 </span><span class="lineCov">          1 :   printf(&quot;test dBas: given {1,2}&quot;), r = dBas(a, n, &amp;d, &amp;l);</span>
+<span class="lineNum">     297 </span><span class="lineCov">          1 :   test(r, 0, &quot;base should eq 0&quot;), free(d), puts(&quot;&quot;);</span>
+<span class="lineNum">     298 </span><span class="lineCov">          1 : }</span>
+<a name="299"><span class="lineNum">     299 </span>            : </a>
+<span class="lineNum">     300 </span>            : void
+<span class="lineNum">     301 </span><span class="lineCov">          1 : test_dBas7(void) {</span>
+<span class="lineNum">     302 </span><span class="lineCov">          1 :   dl_t l = 7, a[] = {1,3,5}, n = DL(a); d_t * d = dini(l); int r;</span>
+<span class="lineNum">     303 </span><span class="lineCov">          1 :   printf(&quot;test dBas: given {1,3,5} when base[5] is occupied&quot;), d[5].c = 0;</span>
+<span class="lineNum">     304 </span><span class="lineCov">          1 :   r = dBas(a, n, &amp;d, &amp;l), test(r, 1, &quot;base should eq 1&quot;), free(d), puts(&quot;&quot;);</span>
+<span class="lineNum">     305 </span><span class="lineCov">          1 : }</span>
+<a name="306"><span class="lineNum">     306 </span>            : </a>
+<span class="lineNum">     307 </span>            : void
+<span class="lineNum">     308 </span><span class="lineCov">          1 : test_dBas8(void) {</span>
+<span class="lineNum">     309 </span><span class="lineCov">          1 :   dl_t l = 1, a[] = {1,3}, n = DL(a); d_t * d = dini(l);</span>
+<span class="lineNum">     310 </span><span class="lineCov">          1 :   printf(&quot;test dBas: given {1,3} when len &lt; 3&quot;), dBas(a, n, &amp;d, &amp;l);</span>
+<span class="lineNum">     311 </span><span class="lineCov">          1 :   test(l, 3, &quot;len should eq 3&quot;), free(d), puts(&quot;&quot;);</span>
+<span class="lineNum">     312 </span><span class="lineCov">          1 : }</span>
+<a name="313"><span class="lineNum">     313 </span>            : </a>
+<span class="lineNum">     314 </span>            : void
+<span class="lineNum">     315 </span><span class="lineCov">          1 : test_dBas9(void) {</span>
+<span class="lineNum">     316 </span>            :   dl_t l, * a, n; d_t * d; int r;
+<span class="lineNum">     317 </span>            :   printf(&quot;test dBas: given {1,MAX} when only last cell are unoccupied&quot;);
+<span class="lineNum">     318 </span><span class="lineCov">          1 :   if (!test(DX == DI, 1, &quot;this test should be run with sizeof dl_t == dt_t&quot;)) {</span>
+<span class="lineNum">     319 </span><span class="lineNoCov">          0 :     l = 1, a = (dl_t[]){1,DI}, n = 2, d = dini(l);</span>
+<span class="lineNum">     320 </span><span class="lineNoCov">          0 :     dBas(a, n, &amp;d, &amp;l), test(l, DI, &quot;len should eq MAX&quot;),</span>
+<span class="lineNum">     321 </span><span class="lineNoCov">          0 :     d-&gt;c = -DI, r = dBas(a, n, &amp;d, &amp;l);</span>
+<span class="lineNum">     322 </span><span class="lineNoCov">          0 :     test(r, -1, &quot;should return error: len is max&quot;), free(d);</span>
+<span class="lineNum">     323 </span>            :   }
+<span class="lineNum">     324 </span><span class="lineCov">          1 :   puts(&quot;&quot;);</span>
+<span class="lineNum">     325 </span><span class="lineCov">          1 : }</span>
+<a name="326"><span class="lineNum">     326 </span>            : </a>
+<span class="lineNum">     327 </span>            : void
+<span class="lineNum">     328 </span><span class="lineCov">          1 : test_dBas10(void) {</span>
+<span class="lineNum">     329 </span>            :   dl_t i, l; d_t * d; int r;
+<span class="lineNum">     330 </span>            :   printf(&quot;test dBas: given {1,3,6} when base[1,3,5...MAX-2] are occupied&quot;);
+<span class="lineNum">     331 </span><span class="lineCov">          1 :   if (!test(DX == DI, 1, &quot;this test should be run with sizeof dl_t == dt_t&quot;)) {</span>
+<span class="lineNum">     332 </span><span class="lineNoCov">          0 :     l = DI, d = dini(l);</span>
+<span class="lineNum">     333 </span><span class="lineNoCov">          0 :     for (i = 0; i &lt; l-1; i+=2) d[i].c = -i-2, d[i+1].c = 0;</span>
+<span class="lineNum">     334 </span><span class="lineNoCov">          0 :     r = dBas((dl_t[]){1,3,6}, 3, &amp;d, &amp;l);</span>
+<span class="lineNum">     335 </span><span class="lineNoCov">          0 :     test(r, DI-6, &quot;base should eq MAX-6&quot;), free(d);</span>
+<span class="lineNum">     336 </span>            :   }
+<span class="lineNum">     337 </span><span class="lineCov">          1 :   puts(&quot;&quot;);</span>
+<span class="lineNum">     338 </span><span class="lineCov">          1 : }</span>
+<a name="339"><span class="lineNum">     339 </span>            : </a>
+<span class="lineNum">     340 </span>            : void
+<span class="lineNum">     341 </span><span class="lineCov">          1 : test_dBas11(void) {</span>
+<span class="lineNum">     342 </span>            :   dl_t i, l; d_t * d; int r;
+<span class="lineNum">     343 </span>            :   printf(&quot;test dBas: given {1,3,6,7} when base[1,3,5...MAX-2] are occupied&quot;);
+<span class="lineNum">     344 </span><span class="lineCov">          1 :   if (!test(DX == DI, 1, &quot;this test should be run with sizeof dl_t == dt_t&quot;)) {</span>
+<span class="lineNum">     345 </span><span class="lineNoCov">          0 :     l = DI, d = dini(l);</span>
+<span class="lineNum">     346 </span><span class="lineNoCov">          0 :     for (i = 0; i &lt; l-1; i+=2) d[i].b--, d[i].c = -i-2, d[i+1].c = 0;</span>
+<span class="lineNum">     347 </span><span class="lineNoCov">          0 :     d[2].b = l, d[l].c = -2, r = dBas((dl_t[]){1,3,6,7}, 4, &amp;d, &amp;l);</span>
+<span class="lineNum">     348 </span><span class="lineNoCov">          0 :     test(r, -1, &quot;should return error: len is max (the key is out of bound)&quot;);</span>
+<span class="lineNum">     349 </span><span class="lineNoCov">          0 :     free(d);</span>
+<span class="lineNum">     350 </span>            :   }
+<span class="lineNum">     351 </span><span class="lineCov">          1 :   puts(&quot;&quot;);</span>
+<span class="lineNum">     352 </span><span class="lineCov">          1 : }</span>
+<a name="353"><span class="lineNum">     353 </span>            : </a>
+<span class="lineNum">     354 </span>            : void
+<span class="lineNum">     355 </span><span class="lineCov">          1 : test_drel1(void) {</span>
+<span class="lineNum">     356 </span><span class="lineCov">          1 :   dl_t l = 4, a[] = {2}, n = DL(a);</span>
+<span class="lineNum">     357 </span><span class="lineCov">          1 :   d_t d[] = {{1,-1},{4,-2},{1,-4},{-1,0},{2,-1}},</span>
+<span class="lineNum">     358 </span><span class="lineCov">          1 :       e[] = {{0,-1},{4,-3},{-1,0},{1,-4},{3,-1}};</span>
+<span class="lineNum">     359 </span>            :   printf(&quot;test drel: given {2} when base+2 is in the middle of double array&quot;);
+<span class="lineNum">     360 </span><span class="lineCov">          1 :   drel(0, d[0].b, 0, a, n, d, l), test_dcmp(d, l, e, DL(e)-1), puts(&quot;&quot;);</span>
+<span class="lineNum">     361 </span><span class="lineCov">          1 : }</span>
+<a name="362"><span class="lineNum">     362 </span>            : </a>
+<span class="lineNum">     363 </span>            : void
+<span class="lineNum">     364 </span><span class="lineCov">          1 : test_drel2(void) {</span>
+<span class="lineNum">     365 </span><span class="lineCov">          1 :   dl_t l = 3, a[] = {1}, n = DL(a);</span>
+<span class="lineNum">     366 </span><span class="lineCov">          1 :   d_t d[] = {{0,-2},{-1,0},{3,-3},{2,-2}}, e[] = {{1,-1},{3,-3},{-1,0},{1,-1}};</span>
+<span class="lineNum">     367 </span>            :   printf(&quot;test drel: given {1} when the new child is the first empty cell&quot;);
+<span class="lineNum">     368 </span><span class="lineCov">          1 :   drel(0, d[0].b, 1, a, n, d, l), test_dcmp(d, l, e, DL(e)-1), puts(&quot;&quot;);</span>
+<span class="lineNum">     369 </span><span class="lineCov">          1 : }</span>
+<a name="370"><span class="lineNum">     370 </span>            : </a>
+<span class="lineNum">     371 </span>            : void
+<span class="lineNum">     372 </span><span class="lineCov">          1 : test_drel3(void) {</span>
+<span class="lineNum">     373 </span><span class="lineCov">          1 :   dl_t l = 3, a[] = {1}, n = DL(a);</span>
+<span class="lineNum">     374 </span><span class="lineCov">          1 :   d_t d[] = {{0,-2},{-1,0},{2,-2},{-1,1}}, e[] = {{1,-1},{1,-1},{-1,0},{-1,1}};</span>
+<span class="lineNum">     375 </span>            :   printf(&quot;test drel: given {1} when the new child is the final empty cell&quot;);
+<span class="lineNum">     376 </span><span class="lineCov">          1 :   drel(0, d[0].b, 1, a, n, d, l), test_dcmp(d, l, e, DL(e)-1), puts(&quot;&quot;);</span>
+<span class="lineNum">     377 </span><span class="lineCov">          1 : }</span>
+<a name="378"><span class="lineNum">     378 </span>            : </a>
+<span class="lineNum">     379 </span>            : void
+<span class="lineNum">     380 </span><span class="lineCov">          1 : test_drel4(void) {</span>
+<span class="lineNum">     381 </span><span class="lineCov">          1 :   dl_t l = 3, a[] = {1}, n = DL(a);</span>
+<span class="lineNum">     382 </span><span class="lineCov">          1 :   d_t d[] = {{1,-1},{1,-1},{-1,0},{-1,1}}, e[] = {{0,-2},{-1,0},{2,-2},{-1,1}};</span>
+<span class="lineNum">     383 </span>            :   printf(&quot;test drel: given {1} when there is one empty preceding the child&quot;);
+<span class="lineNum">     384 </span><span class="lineCov">          1 :   drel(0, d[0].b, 0, a, n, d, l), test_dcmp(d, l, e, DL(e)-1), puts(&quot;&quot;);</span>
+<span class="lineNum">     385 </span><span class="lineCov">          1 : }</span>
+<a name="386"><span class="lineNum">     386 </span>            : </a>
+<span class="lineNum">     387 </span>            : void
+<span class="lineNum">     388 </span><span class="lineCov">          1 : test_drel5(void) {</span>
+<span class="lineNum">     389 </span><span class="lineCov">          1 :   dl_t l = 4, a[] = {1,3}, n = DL(a);</span>
+<span class="lineNum">     390 </span><span class="lineCov">          1 :   d_t d[] = {{0,-2},{-1,0},{4,-4},{-2,0},{2,-2}},</span>
+<span class="lineNum">     391 </span><span class="lineCov">          1 :       e[] = {{1,-1},{3,-3},{-1,0},{1,-1},{-2,0}};</span>
+<span class="lineNum">     392 </span>            :   printf(&quot;test drel: given {1,3}&quot;);
+<span class="lineNum">     393 </span><span class="lineCov">          1 :   drel(0, d[0].b, 1, a, n, d, l), test_dcmp(d, l, e, DL(e)-1), puts(&quot;&quot;);</span>
+<span class="lineNum">     394 </span><span class="lineCov">          1 : }</span>
+<a name="395"><span class="lineNum">     395 </span>            : </a>
+<span class="lineNum">     396 </span>            : void
+<span class="lineNum">     397 </span><span class="lineCov">          1 : test_drel6(void) {</span>
+<span class="lineNum">     398 </span><span class="lineCov">          1 :   dl_t l = 6, a[] = {1,4}, n = DL(a);</span>
+<span class="lineNum">     399 </span><span class="lineCov">          1 :   d_t d[] = {{0,-2},{1,0},{-1,1},{6,-6},{3,0},{-2,4},{3,-3}},</span>
+<span class="lineNum">     400 </span><span class="lineCov">          1 :       e[] = {{2,-1},{4,-4},{-1,3},{1,0},{1,-1},{-2,6},{3,0}};</span>
+<span class="lineNum">     401 </span>            :   printf(&quot;test drel: given {1,4} when each node have one child&quot;);
+<span class="lineNum">     402 </span><span class="lineCov">          1 :   drel(0, d[0].b, 2, a, n, d, l), test_dcmp(d, l, e, DL(e)-1), puts(&quot;&quot;);</span>
+<span class="lineNum">     403 </span><span class="lineCov">          1 : }</span>
+<a name="404"><span class="lineNum">     404 </span>            : </a>
+<span class="lineNum">     405 </span>            : void
+<span class="lineNum">     406 </span><span class="lineCov">          1 : test_drel7(void) {</span>
+<span class="lineNum">     407 </span><span class="lineCov">          1 :   dl_t l = 4, a[] = {1,2}, n = DL(a);</span>
+<span class="lineNum">     408 </span><span class="lineCov">          1 :   d_t d[] = {{2,-1},{2,-2},{1,-1},{-1,0},{-2,0}},</span>
+<span class="lineNum">     409 </span><span class="lineCov">          1 :       e[] = {{0,-3},{-1,0},{-2,0},{4,-4},{3,-3}};</span>
+<span class="lineNum">     410 </span>            :   printf(&quot;test drel: given {1,2} when multiple child nodes move to front&quot;);
+<span class="lineNum">     411 </span><span class="lineCov">          1 :   drel(0, d[0].b, 0, a, n, d, l), test_dcmp(d, l, e, DL(e)-1), puts(&quot;&quot;);</span>
+<span class="lineNum">     412 </span><span class="lineCov">          1 : }</span>
+<a name="413"><span class="lineNum">     413 </span>            : </a>
+<span class="lineNum">     414 </span>            : void
+<span class="lineNum">     415 </span><span class="lineCov">          1 : test_drel8(void) {</span>
+<span class="lineNum">     416 </span>            :   dl_t l, * a; d_t * d, * e;
+<span class="lineNum">     417 </span>            :   printf(&quot;test drel: given {1} when this node has a child: {UNSIGNED_MAX+1}&quot;);
+<span class="lineNum">     418 </span><span class="lineCov">          1 :   if (!test(DX &gt; DI, 1, &quot;this test should be run with sizeof dl_t &gt; dt_t&quot;)) {</span>
+<span class="lineNum">     419 </span><span class="lineCov">          1 :     l = DM+(DX &gt; DI), (d=dini(l))-&gt;b = 2, (e=dini(l))-&gt;b = 0, d[d[4].b=2].c=-4;</span>
+<span class="lineNum">     420 </span><span class="lineCov">          1 :     d[d[1].b = DM].c = -1, d[3] = (d_t){0,0}, d[DM+1] = (d_t){-1,3};</span>
+<span class="lineNum">     421 </span><span class="lineCov">          1 :     e[e[2].b = DM].c = -2, e[1] = (d_t){0,0}, e[DM+1] = (d_t){-1,1}, e-&gt;c = -2;</span>
+<span class="lineNum">     422 </span><span class="lineCov">          1 :     drel(0, d[0].b, 0, (dl_t[]){1}, 1, d, l), test_dcmp(d, l, e, l);</span>
+<span class="lineNum">     423 </span><span class="lineCov">          1 :     free(d), free(e);</span>
+<span class="lineNum">     424 </span>            :   }
+<span class="lineNum">     425 </span><span class="lineCov">          1 :   puts(&quot;&quot;);</span>
+<span class="lineNum">     426 </span><span class="lineCov">          1 : }</span>
+<span class="lineNum">     427 </span>            : 
+<span class="lineNum">     428 </span>            : void
+<span class="lineNum">     429 </span><span class="lineCov">          1 : test_dral1(void) {</span>
+<span class="lineNum">     430 </span><span class="lineCov">          2 :   dl_t c = 1; dt_t * t = dinl(c), e[] = {0,0};</span>
+<span class="lineNum">     431 </span><span class="lineCov">          1 :   printf(&quot;test dral: given {0}&quot;), dral(&amp;t, &amp;c);</span>
+<span class="lineNum">     432 </span><span class="lineCov">          1 :   test(memcmp(t, e, DL(e)*DT), 0, &quot;tail should eq {0,0}&quot;), free(t), puts(&quot;&quot;);</span>
+<span class="lineNum">     433 </span><span class="lineCov">          1 : }</span>
+<span class="lineNum">     434 </span>            : 
+<span class="lineNum">     435 </span>            : void
+<span class="lineNum">     436 </span><span class="lineCov">          1 : test_dral2(void) {</span>
+<span class="lineNum">     437 </span><span class="lineCov">          2 :   dl_t c = 2; dt_t * t = dinl(c), e[] = {1,2,0,0};</span>
+<span class="lineNum">     438 </span>            :   printf(&quot;test dral: given {1,2}&quot;);
+<span class="lineNum">     439 </span><span class="lineCov">          1 :   t[0] = 1, t[1] = 2, dral(&amp;t, &amp;c);</span>
+<span class="lineNum">     440 </span><span class="lineCov">          1 :   test(memcmp(t, e, DL(e)*DT), 0, &quot;tail should eq {1,2,0,0}&quot;), free(t);</span>
+<span class="lineNum">     441 </span><span class="lineCov">          1 :   puts(&quot;&quot;);</span>
+<span class="lineNum">     442 </span><span class="lineCov">          1 : }</span>
+<span class="lineNum">     443 </span>            : 
+<span class="lineNum">     444 </span>            : void
+<span class="lineNum">     445 </span><span class="lineCov">          1 : test_dins1(void) {</span>
+<span class="lineNum">     446 </span><span class="lineCov">          1 :   dl_t l = 1, tl = 0, tc = 1;</span>
+<span class="lineNum">     447 </span><span class="lineCov">          2 :   d_t * d = dini(l), e[] = {{0,0},{-1,0}}; dt_t a[] = {0}, * t = dinl(tc);</span>
+<span class="lineNum">     448 </span><span class="lineCov">          1 :   printf(&quot;test dins: given {0}&quot;), dins(a, DL(a), 0, &amp;d, &amp;l, &amp;t, &amp;tl, &amp;tc);</span>
+<span class="lineNum">     449 </span><span class="lineCov">          1 :   test_dcmp(d, l, e, DL(e)-1), free(d), free(t), puts(&quot;&quot;);</span>
+<span class="lineNum">     450 </span><span class="lineCov">          1 : }</span>
+<a name="451"><span class="lineNum">     451 </span>            : </a>
+<span class="lineNum">     452 </span>            : void
+<span class="lineNum">     453 </span><span class="lineNoCov">          0 : code(dt_t * a, dl_t n) { /* assume n &gt;= 1 */</span>
+<span class="lineNum">     454 </span><span class="lineCov">         24 :   while (--n, a[n] = a[n] ? a[n] - 'a' + 1 : 0, n);</span>
+<span class="lineNum">     455 </span><span class="lineNoCov">          0 : }</span>
+<a name="456"><span class="lineNum">     456 </span>            : </a>
+<span class="lineNum">     457 </span>            : int
+<span class="lineNum">     458 </span><span class="lineNoCov">          0 : wta(FILE * f, dt_t * a, dl_t n) {</span>
+<span class="lineNum">     459 </span>            :   int j, k;
+<span class="lineNum">     460 </span><span class="lineNoCov">          0 :   for (j = 0; j &lt; n; j += k) {</span>
+<span class="lineNum">     461 </span><span class="lineNoCov">          0 :     for (k = 0; k &lt; 32 &amp;&amp; j+k &lt; n; k++) fprintf(f, &quot;%3d &quot;, j+k);</span>
+<span class="lineNum">     462 </span><span class="lineNoCov">          0 :     fputc('\n', f);</span>
+<span class="lineNum">     463 </span><span class="lineNoCov">          0 :     for (k = 0; k &lt; 32 &amp;&amp; j+k &lt; n; k++) fprintf(f, &quot;----&quot;);</span>
+<span class="lineNum">     464 </span><span class="lineNoCov">          0 :     fputc('\n', f);</span>
+<span class="lineNum">     465 </span><span class="lineNoCov">          0 :     for (k = 0; k &lt; 32 &amp;&amp; j+k &lt; n; k++)</span>
+<span class="lineNum">     466 </span>            :       /*fprintf(f, &quot;  %c  &quot;, a[j+k] &gt; 1 ? a[j+k]-1: a[j+k] == 1 ? '#' : '.');*/
+<span class="lineNum">     467 </span><span class="lineNoCov">          0 :       fprintf(f, &quot;  %c &quot;, a[j+k] &gt; 1 ? a[j+k]+'a'-2: a[j+k] ? '#' : '.');</span>
+<span class="lineNum">     468 </span>            :       /*fprintf(f, &quot; %2d &quot;, a[j+k] ? a[j+k]-1: 99);*/
+<span class="lineNum">     469 </span><span class="lineNoCov">          0 :     fputc('\n', f);</span>
+<span class="lineNum">     470 </span><span class="lineNoCov">          0 :     if (j+k == n) break;</span>
+<span class="lineNum">     471 </span><span class="lineNoCov">          0 :     fputc('\n', f);</span>
+<span class="lineNum">     472 </span>            :   }
+<span class="lineNum">     473 </span><span class="lineNoCov">          0 : }</span>
+<a name="474"><span class="lineNum">     474 </span>            : </a>
+<span class="lineNum">     475 </span>            : int
+<span class="lineNum">     476 </span><span class="lineNoCov">          0 : fta(char * s, dt_t * a, dl_t n) {</span>
+<span class="lineNum">     477 </span><span class="lineNoCov">          0 :   FILE * f = fopen(s, &quot;w&quot;); wta(f, a, n), fclose(f);</span>
+<span class="lineNum">     478 </span><span class="lineNoCov">          0 : }</span>
+<a name="479"><span class="lineNum">     479 </span>            : </a>
+<span class="lineNum">     480 </span>            : int
+<span class="lineNum">     481 </span><span class="lineNoCov">          0 : pta(dt_t * a, dl_t n) { wta(stdout, a, n); }</span>
+<span class="lineNum">     482 </span>            : 
+<span class="lineNum">     483 </span>            : void
+<span class="lineNum">     484 </span><span class="lineCov">          3 : test_tcmp(dt_t * a, dl_t al, dt_t * b, dl_t bl) {</span>
+<span class="lineNum">     485 </span><span class="lineCov">          6 :   (al == bl &amp;&amp; !memcmp(a, b, al)) &amp;&amp; printf(&quot;  &quot;GOOD) ||</span>
+<span class="lineNum">     486 </span><span class="lineNoCov">          0 :       (puts(&quot;\n  &quot;BAD), pta(a, al), puts(&quot;\n  should eq&quot;), pta(b, bl));</span>
+<span class="lineNum">     487 </span><span class="lineCov">          3 : }</span>
+<span class="lineNum">     488 </span>            : 
+<span class="lineNum">     489 </span>            : void
+<span class="lineNum">     490 </span><span class="lineCov">          1 : test_dins2(void) {</span>
+<span class="lineNum">     491 </span><span class="lineCov">          1 :   dl_t l = 1, tl = 0, tc = 1;</span>
+<span class="lineNum">     492 </span><span class="lineCov">          1 :   d_t * d = dini(l), e[] = {{0,-1},{3,-3},{-1,0},{1,-1}};</span>
+<span class="lineNum">     493 </span><span class="lineCov">          2 :   dt_t a[] = {1}, * t = dinl(tc), te[] = {0,0,0,0,0};</span>
+<span class="lineNum">     494 </span><span class="lineCov">          1 :   printf(&quot;test dins: given {1}&quot;), dins(a, DL(a), 0, &amp;d, &amp;l, &amp;t, &amp;tl, &amp;tc);</span>
+<span class="lineNum">     495 </span><span class="lineCov">          1 :   test_dcmp(d, l, e, DL(e)-1), test_tcmp(t, tl, te, DL(te)), free(d), free(t);</span>
+<span class="lineNum">     496 </span><span class="lineCov">          1 :   puts(&quot;&quot;);</span>
+<span class="lineNum">     497 </span><span class="lineCov">          1 : }</span>
+<a name="498"><span class="lineNum">     498 </span>            : </a>
+<span class="lineNum">     499 </span>            : void /* base array + check array = double array */
+<span class="lineNum">     500 </span><span class="lineNoCov">          0 : dcat(dl_t * b, dl_t * c, d_t * d, dl_t n) { /* assume n &gt;= 1 */</span>
+<span class="lineNum">     501 </span><span class="lineCov">          4 :   while (--n, d[n] = (d_t){b[n],c[n]}, n);</span>
+<span class="lineNum">     502 </span><span class="lineNoCov">          0 : }</span>
+<a name="503"><span class="lineNum">     503 </span>            : </a>
+<span class="lineNum">     504 </span>            : void /* convert human readable string to tail */
+<span class="lineNum">     505 </span><span class="lineCov">          1 : tconv(dt_t * t, dl_t * n) {</span>
+<span class="lineNum">     506 </span>            :   dl_t i, j; dl_t c;
+<span class="lineNum">     507 </span><span class="lineCov">         38 :   for (i = j = 0; i &lt; *n; i += 3, j++)</span>
+<span class="lineNum">     508 </span><span class="lineCov">         37 :     t[j] = (c=t[i])=='#' ? 1:(c=='.' ? 0:c-'a'+2);</span>
+<span class="lineNum">     509 </span><span class="lineCov">          1 :   *n /= 3;</span>
+<span class="lineNum">     510 </span><span class="lineCov">          1 : }</span>
+<span class="lineNum">     511 </span>            : 
+<span class="lineNum">     512 </span>            : void
+<span class="lineNum">     513 </span><span class="lineCov">          1 : test_dins3(void) {</span>
+<span class="lineNum">     514 </span><span class="lineCov">          1 :   dl_t l = 1, tl = 0, tc = 1, tn,</span>
+<span class="lineNum">     515 </span>            :        /*       .   #   a   b   c   d   e   f   g   h   i   j   k   l   m   n */
+<span class="lineNum">     516 </span>            :        /*       0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15 */
+<span class="lineNum">     517 </span><span class="lineCov">          1 :        b1[] = { 0,  2,  1, -1},</span>
+<span class="lineNum">     518 </span><span class="lineCov">          1 :        c1[] = {-1, -2, -1,  0},</span>
+<span class="lineNum">     519 </span>            :        /*       0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15 */
+<span class="lineNum">     520 </span><span class="lineCov">          1 :        b2[] = { 0, 15,  1, -1,  2,  4,  5,  6,  7,  8,  9,-14, 10, 12, 13, 14},</span>
+<span class="lineNum">     521 </span><span class="lineCov">          1 :        c2[] = {-1, -2, -4,  0, -5, -6, -7, -8, -9,-10,-12,  0,-13,-14,-15, -1},</span>
+<span class="lineNum">     522 </span>            :        /*       0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15 */
+<span class="lineNum">     523 </span><span class="lineCov">          1 :        b3[] = { 0, 15,  0,  0, -3,-22,  1,  6,  7,  8,  9,-14, 10, 12, 13, 14},</span>
+<span class="lineNum">     524 </span><span class="lineCov">          1 :        c3[] = {-1, -6,  3,  0,  2,  2, -7, -8, -9,-10,-12,  0,-13,-14,-15, -1},</span>
+<span class="lineNum">     525 </span>            :        /*       0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15 */
+<span class="lineNum">     526 </span><span class="lineCov">          1 :        b4[] = { 3, 15,  0,-30, -3,-22,  0,  1,  7,  8,  9, 10, 11, 12,-14, 13},</span>
+<span class="lineNum">     527 </span><span class="lineCov">          1 :        c4[] = {-1, -7,  6,  2,  2,  2,  0, -8, -9,-10,-11,-12,-13,-15,  0, -1};</span>
+<span class="lineNum">     528 </span><span class="lineCov">          1 :   d_t * d = dini(l), e1[DL(b1)], e2[DL(b2)], e3[DL(b3)], e4[DL(b4)];</span>
+<span class="lineNum">     529 </span><span class="lineCov">          2 :   dt_t a1[]=&quot;bachelor&quot;, a2[]=&quot;jar&quot;, a3[]=&quot;badge&quot;, a4[]=&quot;baby&quot;, n, *t = dinl(tc),</span>
+<span class="lineNum">     530 </span><span class="lineCov">          1 :        te[] = /* 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20*/</span>
+<span class="lineNum">     531 </span>            :            /**/ &quot;a  c  h  e  l  o  r  #  .  .  .  .  .  a  r  #  .  .  .  .  . &quot;
+<span class="lineNum">     532 </span>            :            /*   21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 */
+<span class="lineNum">     533 </span>            :            /**/&quot; g  e  #  .  .  .  .  .  y  #  .  .  .  .  .  &quot;;
+<span class="lineNum">     534 </span>            :   printf(&quot;test dins: given {bachelor#, jar#, badge#, baby#}&quot;);
+<span class="lineNum">     535 </span>            :   dcat(b1, c1, e1, DL(b1)), dcat(b2, c2, e2, DL(b2));
+<span class="lineNum">     536 </span>            :   dcat(b3, c3, e3, DL(b3)), dcat(b4, c4, e4, DL(b4));
+<span class="lineNum">     537 </span><span class="lineCov">          1 :   code(a1,n=DL(a1)), dins(a1,n,0,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc), test_dcmp(d,l,e1,DL(e1)-1);</span>
+<span class="lineNum">     538 </span><span class="lineCov">          2 :   code(a2,n=DL(a2)), dins(a2,n,0,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc), test_dcmp(d,l,e2,DL(e2)-1);</span>
+<span class="lineNum">     539 </span><span class="lineCov">          2 :   code(a3,n=DL(a3)), dins(a3,n,0,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc), test_dcmp(d,l,e3,DL(e3)-1);</span>
+<span class="lineNum">     540 </span><span class="lineCov">          2 :   code(a4,n=DL(a4)), dins(a4,n,0,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc), test_dcmp(d,l,e4,DL(e4)-1);</span>
+<span class="lineNum">     541 </span><span class="lineCov">          1 :   tn = DL(te), tconv(te,&amp;tn), test_tcmp(t,tl,te,tn), free(d), free(t), puts(&quot;&quot;);</span>
+<span class="lineNum">     542 </span><span class="lineCov">          1 : }</span>
+<span class="lineNum">     543 </span>            : 
+<span class="lineNum">     544 </span>            : void
+<span class="lineNum">     545 </span><span class="lineCov">          1 : test_dins4(void) {</span>
+<span class="lineNum">     546 </span><span class="lineCov">          1 :   dl_t l = 1, tl = 0, tc = 1;</span>
+<span class="lineNum">     547 </span><span class="lineCov">          1 :   d_t * d = dini(l),</span>
+<span class="lineNum">     548 </span><span class="lineCov">          1 :       e1[] = {{0,-1},{7,-5},{0,0},{-6,2},{-11,2},{1,-6},{5,-7},{6,-1}},</span>
+<span class="lineNum">     549 </span><span class="lineCov">          1 :       e2[] = {{3,-1},{7,-2},{1,-7},{-6,5},{-11,5},{0,0},{-16,0},{2,-1}},</span>
+<span class="lineNum">     550 </span><span class="lineCov">          1 :       e3[] = {{5,-1},{15,-2},{1,-6},{-6,7},{-11,7},{-21,7},{2,-9},{0,0},</span>
+<span class="lineNum">     551 </span>            :         {-16,0},{6,-10},{9,-11},{10,-12},{11,-13},{12,-14},{13,-15},{14,-1}};
+<span class="lineNum">     552 </span><span class="lineCov">          2 :   dt_t a1[]={1}, a2[]={1,2}, a3[]={1,3}, a4[]={2}, a5[]={1,4}, * t = dinl(tc);</span>
+<span class="lineNum">     553 </span>            :   printf(&quot;test dins: given {1},{1,2},{1,3},{2},{1,4}&quot;);
+<span class="lineNum">     554 </span><span class="lineCov">          1 :   dins(a1,DL(a1),0,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc), dins(a2,DL(a2),0,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc);</span>
+<span class="lineNum">     555 </span><span class="lineCov">          1 :   dins(a3,DL(a3),0,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc), test_dcmp(d, l, e1, DL(e1)-1);</span>
+<span class="lineNum">     556 </span><span class="lineCov">          1 :   dins(a4,DL(a4),0,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc), test_dcmp(d, l, e2, DL(e2)-1);</span>
+<span class="lineNum">     557 </span><span class="lineCov">          1 :   dins(a5,DL(a5),0,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc), test_dcmp(d, l, e3, DL(e3)-1);</span>
+<span class="lineNum">     558 </span><span class="lineCov">          1 :   free(d), free(t), puts(&quot;&quot;);</span>
+<span class="lineNum">     559 </span><span class="lineCov">          1 : }</span>
+<span class="lineNum">     560 </span>            : 
+<span class="lineNum">     561 </span>            : void
+<span class="lineNum">     562 </span><span class="lineCov">          1 : test_dins5(void) {</span>
+<span class="lineNum">     563 </span><span class="lineCov">          1 :   dl_t l = 1, tl = 0, tc = 1;</span>
+<span class="lineNum">     564 </span><span class="lineCov">          1 :   d_t * d = dini(l), e[] = {{0,-1},{1,-1},{0,0},{-6,2}};</span>
+<span class="lineNum">     565 </span><span class="lineCov">          2 :   dt_t a1[] = {1}, a2[] = {1,2}, * t = dinl(tc); int r;</span>
+<span class="lineNum">     566 </span>            :   printf(&quot;test dins: given {1},{1,2},{1,2},{1}&quot;);
+<span class="lineNum">     567 </span><span class="lineCov">          1 :   dins(a1,DL(a1),0,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc), dins(a2,DL(a2),0,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc);</span>
+<span class="lineNum">     568 </span><span class="lineCov">          1 :   test_dcmp(d, l, e, DL(e)-1), r = dins(a1,DL(a1),0,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc);</span>
+<span class="lineNum">     569 </span><span class="lineCov">          1 :   test(r, 4, &quot;should return prefix key&quot;), r=dins(a2,DL(a2),0,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc);</span>
+<span class="lineNum">     570 </span><span class="lineCov">          1 :   test(r, 4, &quot;should return duplicated key&quot;), free(d), free(t), puts(&quot;&quot;);</span>
+<span class="lineNum">     571 </span><span class="lineCov">          1 : }</span>
+<span class="lineNum">     572 </span>            : 
+<span class="lineNum">     573 </span>            : void
+<span class="lineNum">     574 </span><span class="lineCov">          1 : test_dins6(void) {</span>
+<span class="lineNum">     575 </span><span class="lineCov">          1 :   dl_t l = 1, tl = 0, tc = 1;</span>
+<span class="lineNum">     576 </span><span class="lineCov">          2 :   d_t * d = dini(l); dt_t a[] = {1,2}, * t = dinl(tc); int r;</span>
+<span class="lineNum">     577 </span>            :   printf(&quot;test dins: given {1,2},{1,2}&quot;);
+<span class="lineNum">     578 </span><span class="lineCov">          1 :   dins(a,DL(a),0,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc), r = dins(a,DL(a),0,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc);</span>
+<span class="lineNum">     579 </span><span class="lineCov">          1 :   test(r, 4, &quot;should return duplicated key&quot;), free(d), free(t), puts(&quot;&quot;);</span>
+<span class="lineNum">     580 </span><span class="lineCov">          1 : }</span>
+<span class="lineNum">     581 </span>            : 
+<span class="lineNum">     582 </span>            : void
+<span class="lineNum">     583 </span><span class="lineCov">          1 : test_dins7(void) {</span>
+<span class="lineNum">     584 </span><span class="lineCov">          1 :   dl_t l = 1, tl = 0, tc = 1; int r;</span>
+<span class="lineNum">     585 </span><span class="lineCov">          2 :   d_t * d = dini(l); dt_t a1[]={1}, a2[]={2}, * t = dinl(tc), te[2+DD*2] = {0};</span>
+<span class="lineNum">     586 </span>            :   printf(&quot;test dins: given {1 =&gt; 123}, {2 =&gt; 234}&quot;);
+<span class="lineNum">     587 </span><span class="lineCov">          1 :   dins(a1,DL(a1),123,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc); dins(a2,DL(a2),234,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc);</span>
+<span class="lineNum">     588 </span><span class="lineCov">          1 :   *(dd_t*)(te+1) = 123, *(dd_t*)(te+1+DD+1) = 234, test_tcmp(t, tl, te, DL(te));</span>
+<span class="lineNum">     589 </span><span class="lineCov">          1 :   free(d), free(t), puts(&quot;&quot;);</span>
+<span class="lineNum">     590 </span><span class="lineCov">          1 : }</span>
+<span class="lineNum">     591 </span>            : 
+<span class="lineNum">     592 </span>            : void
+<span class="lineNum">     593 </span><span class="lineCov">          1 : test_dlok1(void) {</span>
+<span class="lineNum">     594 </span><span class="lineCov">          1 :   dl_t l = 1, tl = 0, tc = 1; dd_t g;</span>
+<span class="lineNum">     595 </span><span class="lineCov">          2 :   d_t * d = dini(l); dt_t a1[] = {}, a2[] = {l+1}, * t = dinl(tc); int r;</span>
+<span class="lineNum">     596 </span><span class="lineCov">          1 :   printf(&quot;test dlok: given {}, {l+1}&quot;), r = dlok(a1,DL(a1),&amp;g,d,l,t);</span>
+<span class="lineNum">     597 </span><span class="lineCov">          1 :   test(r, 1, &quot;should return not found error&quot;), r = dlok(a2,DL(a2),&amp;g,d,l,t);</span>
+<span class="lineNum">     598 </span><span class="lineCov">          1 :   test(r, 2, &quot;should return key is out of bound error&quot;);</span>
+<span class="lineNum">     599 </span><span class="lineCov">          1 :   free(d), free(t), puts(&quot;&quot;);</span>
+<span class="lineNum">     600 </span><span class="lineCov">          1 : }</span>
+<span class="lineNum">     601 </span>            : 
+<span class="lineNum">     602 </span>            : void
+<span class="lineNum">     603 </span><span class="lineCov">          1 : test_dlok2(void) {</span>
+<span class="lineNum">     604 </span><span class="lineCov">          1 :   dl_t l = 1, tl = 0, tc = 1; dd_t g;</span>
+<span class="lineNum">     605 </span><span class="lineCov">          2 :   d_t * d = dini(l); dt_t a[] = {0}, * t = dinl(tc); int r;</span>
+<span class="lineNum">     606 </span>            :   printf(&quot;test dlok: given {0} when {0}&quot;);
+<span class="lineNum">     607 </span><span class="lineCov">          1 :   dins(a,DL(a),0,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc), r = dlok(a,DL(a),&amp;g,d,l,t);</span>
+<span class="lineNum">     608 </span><span class="lineCov">          1 :   test(r, 0, &quot;should found the key&quot;), free(d), free(t), puts(&quot;&quot;);</span>
+<span class="lineNum">     609 </span><span class="lineCov">          1 : }</span>
+<span class="lineNum">     610 </span>            : 
+<span class="lineNum">     611 </span>            : void
+<span class="lineNum">     612 </span><span class="lineCov">          1 : test_dlok3(void) {</span>
+<span class="lineNum">     613 </span><span class="lineCov">          1 :   dl_t l = 1, tl = 0, tc = 1; dd_t g;</span>
+<span class="lineNum">     614 </span><span class="lineCov">          1 :   d_t * d = dini(l); dt_t a1[] = {0,1,2}, b1[] = {0}, b2[] = {0,1},</span>
+<span class="lineNum">     615 </span><span class="lineCov">          2 :       b3[] = {0,1,2,3}, * t = dinl(tc); int r;</span>
+<span class="lineNum">     616 </span>            :   printf(&quot;test dlok: given {0},{0,1},{0,1,2},{0,1,2,3} when {0,1,2}&quot;);
+<span class="lineNum">     617 </span><span class="lineCov">          1 :   dins(a1,DL(a1),0,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc);</span>
+<span class="lineNum">     618 </span><span class="lineCov">          1 :   r = dlok(b1,DL(b1),&amp;g,d,l,t), test(r, 1, &quot;should return not found error&quot;);</span>
+<span class="lineNum">     619 </span><span class="lineCov">          1 :   r = dlok(b2,DL(b2),&amp;g,d,l,t), test(r, 1, &quot;should return not found error&quot;);</span>
+<span class="lineNum">     620 </span><span class="lineCov">          1 :   r = dlok(a1,DL(a1),&amp;g,d,l,t), test(r, 0, &quot;should found the key&quot;);</span>
+<span class="lineNum">     621 </span><span class="lineCov">          1 :   r = dlok(b3,DL(b3),&amp;g,d,l,t), test(r, 1, &quot;should return not found error&quot;);</span>
+<span class="lineNum">     622 </span><span class="lineCov">          1 :   free(d), free(t), puts(&quot;&quot;);</span>
+<span class="lineNum">     623 </span><span class="lineCov">          1 : }</span>
+<span class="lineNum">     624 </span>            : 
+<span class="lineNum">     625 </span>            : void
+<span class="lineNum">     626 </span><span class="lineCov">          1 : test_dlok4(void) {</span>
+<span class="lineNum">     627 </span><span class="lineCov">          1 :   dl_t l = 1, tl = 0, tc = 1; dd_t g;</span>
+<span class="lineNum">     628 </span><span class="lineCov">          1 :   d_t * d = dini(l); dt_t a1[] = {2,4,0}, a2[] = {4,1,0}, a3[] = {4,2,3,0},</span>
+<span class="lineNum">     629 </span><span class="lineCov">          2 :       b1[] = {1,3,0}, b2[] = {2,4}, b3[] = {4,1,3}, * t = dinl(tc); int r;</span>
+<span class="lineNum">     630 </span>            :   printf(&quot;test dlok: given {1,3,0},{2,4},{4,1,3} if {2,4,0},{4,1,0},{4,2,3,0}&quot;);
+<span class="lineNum">     631 </span><span class="lineCov">          1 :   dins(a1,DL(a1),0,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc); dins(a2,DL(a2),0,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc);</span>
+<span class="lineNum">     632 </span><span class="lineCov">          1 :   r = dins(a3,DL(a3),0,&amp;d,&amp;l,&amp;t,&amp;tl,&amp;tc);</span>
+<span class="lineNum">     633 </span><span class="lineCov">          1 :   r = dlok(b1,DL(b1),&amp;g,d,l,t), test(r, 1, &quot;should return not found error&quot;);</span>
+<span class="lineNum">     634 </span><span class="lineCov">          1 :   r = dlok(b2,DL(b2),&amp;g,d,l,t), test(r, 1, &quot;should return not found error&quot;);</span>
+<span class="lineNum">     635 </span><span class="lineCov">          1 :   r = dlok(b3,DL(b3),&amp;g,d,l,t), test(r, 1, &quot;should return not found error&quot;);</span>
+<span class="lineNum">     636 </span><span class="lineCov">          1 :   r = dlok(a1,DL(a1),&amp;g,d,l,t), test(r, 0, &quot;should found the key&quot;);</span>
+<span class="lineNum">     637 </span><span class="lineCov">          1 :   r = dlok(a2,DL(a2),&amp;g,d,l,t), test(r, 0, &quot;should found the key&quot;);</span>
+<span class="lineNum">     638 </span><span class="lineCov">          1 :   r = dlok(a3,DL(a3),&amp;g,d,l,t), test(r, 0, &quot;should found the key&quot;);</span>
+<span class="lineNum">     639 </span><span class="lineCov">          1 :   free(d), free(t), puts(&quot;&quot;);</span>
+<span class="lineNum">     640 </span><span class="lineCov">          1 : }</span>
+<span class="lineNum">     641 </span>            : 
+<span class="lineNum">     642 </span>            : /* Usage for evaluation: $ ./datrie input_file
+<span class="lineNum">     643 </span>            :  * File: datrie.c.in.1, The reserved words for Pascal
+<span class="lineNum">     644 </span>            :  * File: datrie.c.in.2, The reserved words for COBOL
+<span class="lineNum">     645 </span>            :  * File: datrie.c.in.3, A listing of Linux RPMs
+<span class="lineNum">     646 </span>            :  * File: datrie.c.in.4, First Level Administrations of All Countries
+<span class="lineNum">     647 </span>            :  * File: datrie.c.in.5, Katakana for a Japanese word dictionary [1]
+<span class="lineNum">     648 </span>            :  *
+<span class="lineNum">     649 </span>            :  * [1] http://dictionary.goo.ne.jp/thsrs/
+<span class="lineNum">     650 </span>            :  */
+<span class="lineNum">     651 </span>            : 
+<span class="lineNum">     652 </span>            : void  /* m: max string length, e: elapsed time */
+<span class="lineNum">     653 </span><span class="lineNoCov">          0 : eval(int argc, char ** argv) { /* iw: insert worst time, ia: insert average T */</span>
+<span class="lineNum">     654 </span>            :   FILE * f; size_t i, j, k, l, m, n; clock_t e, iw, ia, lw, la;
+<span class="lineNum">     655 </span>            :   dl_t dl, tl, tc;
+<span class="lineNum">     656 </span>            :   d_t * d; dt_t * s, * t; dd_t g; int r, rt;
+<span class="lineNum">     657 </span><span class="lineNoCov">          0 :   f = fopen(argv[1], &quot;r&quot;); if (!f) { perror(argv[1]); return; }</span>
+<span class="lineNum">     658 </span>            :   for (iw = ia = lw = la = 0, k = 0, r = 0, n = 50;;) {
+<span class="lineNum">     659 </span><span class="lineNoCov">          0 :     if (fscanf(f, &quot;%zu%zu\n&quot;, &amp;l, &amp;m)-2) break;</span>
+<span class="lineNum">     660 </span><span class="lineNoCov">          0 :     dl = 1, tl = 0, tc = 1, d = dini(dl), t = dinl(tc);</span>
+<span class="lineNum">     661 </span><span class="lineNoCov">          0 :     s = calloc(m/sizeof(int)*sizeof(int)+(m%sizeof(int)?sizeof(int):0),1);</span>
+<span class="lineNum">     662 </span><span class="lineNoCov">          0 :     for (e = clock(), i = j = 0; i &lt; l; i++) {</span>
+<span class="lineNum">     663 </span><span class="lineNoCov">          0 :       if (fscanf(f, &quot;%[^\n]\n&quot;, s) == -1) { r = -1; break; }</span>
+<span class="lineNum">     664 </span><span class="lineNoCov">          0 :       if (r = dins(s,strlen(s)+1,0,&amp;d,&amp;dl,&amp;t,&amp;tl,&amp;tc)) break;</span>
+<span class="lineNum">     665 </span>            :       /*if (i &gt; j) putchar('i'), fflush(stdout), j += l / 10;*/
+<span class="lineNum">     666 </span>            :     }
+<span class="lineNum">     667 </span><span class="lineNoCov">          0 :     e = clock() - e, ia += e, e &gt; iw &amp;&amp; (iw = e), rewind(f);</span>
+<span class="lineNum">     668 </span>            :     /*printf(&quot;base %d\n&quot;, d[597].b);*/
+<span class="lineNum">     669 </span>            :     /*fda(&quot;datrie.debug.final&quot;, d, dl);*/
+<span class="lineNum">     670 </span><span class="lineNoCov">          0 :     if (fscanf(f, &quot;%zu%zu\n&quot;, &amp;l, &amp;m)-2) break;</span>
+<span class="lineNum">     671 </span><span class="lineNoCov">          0 :     for (e = clock(), i = j = 0; i &lt; l; i++) {</span>
+<span class="lineNum">     672 </span><span class="lineNoCov">          0 :       if (fscanf(f, &quot;%[^\n]\n&quot;, s) == -1) { r = -1; break; }</span>
+<span class="lineNum">     673 </span><span class="lineNoCov">          0 :       if (r = dlok(s,strlen(s)+1,&amp;g,d,dl,t)) break;</span>
+<span class="lineNum">     674 </span>            :       /*if (i &gt; j) putchar('l'), fflush(stdout), j += l / 10;*/
+<span class="lineNum">     675 </span>            :     }
+<span class="lineNum">     676 </span><span class="lineNoCov">          0 :     e = clock() - e, la += e, e &gt; lw &amp;&amp; (lw = e), rewind(f)/*, putchar('\n')*/;</span>
+<span class="lineNum">     677 </span><span class="lineNoCov">          0 :     if (++k &lt; n &amp;&amp; !r) free(d), free(t), free(s); else break;</span>
+<span class="lineNum">     678 </span><span class="lineNoCov">          0 :     putchar('.'), fflush(stdout);</span>
+<span class="lineNum">     679 </span><span class="lineNoCov">          0 :   }</span>
+<span class="lineNum">     680 </span>            :   putchar('\n');
+<span class="lineNum">     681 </span><span class="lineNoCov">          0 :   if (r) printf(&quot;return %d, i %zu  [%s]\n&quot;, r, i, s);</span>
+<span class="lineNum">     682 </span><span class="lineNoCov">          0 :   for (i = dl; i &gt; 0 &amp;&amp; d[i].c &lt; 0; i--); i++;</span>
+<span class="lineNum">     683 </span><span class="lineNoCov">          0 :   printf(&quot;KEY_NUM               %10zu\n&quot;</span>
+<span class="lineNum">     684 </span>            :          &quot;SPACE_DOUBLE          %10zu bytes\n&quot;
+<span class="lineNum">     685 </span>            :          &quot;SPACE_TAIL            %10zu bytes\n&quot;
+<span class="lineNum">     686 </span>            :          &quot;SPACE_DOUBLE_TAIL     %10zu bytes\n&quot;
+<span class="lineNum">     687 </span>            :          &quot;SPACE_SOURCE          %10zu bytes\n&quot;
+<span class="lineNum">     688 </span>            :          &quot;insert time - worst   %10lf ms\n&quot;
+<span class="lineNum">     689 </span>            :          &quot;insert time - average %10lf ms\n&quot;
+<span class="lineNum">     690 </span>            :          &quot;lookup time - worst   %10lf ms\n&quot;
+<span class="lineNum">     691 </span><span class="lineNoCov">          0 :          &quot;lookup time - average %10lf ms\n&quot;, l, i*DS, tl*DT, i*DS+tl*DT,</span>
+<span class="lineNum">     692 </span><span class="lineNoCov">          0 :          (fseek(f, 0L, SEEK_END), ftell(f)),</span>
+<span class="lineNum">     693 </span><span class="lineNoCov">          0 :          (double) iw * 1000 / CLOCKS_PER_SEC,</span>
+<span class="lineNum">     694 </span><span class="lineNoCov">          0 :          (double) ia * (1000 / n) / CLOCKS_PER_SEC,</span>
+<span class="lineNum">     695 </span><span class="lineNoCov">          0 :          (double) lw * 1000 / CLOCKS_PER_SEC,</span>
+<span class="lineNum">     696 </span><span class="lineNoCov">          0 :          (double) la * (1000 / n) / CLOCKS_PER_SEC);</span>
+<span class="lineNum">     697 </span><span class="lineNoCov">          0 :   free(d), free(t), free(s), fclose(f);</span>
+<span class="lineNum">     698 </span>            : }
+<a name="699"><span class="lineNum">     699 </span>            : </a>
+<span class="lineNum">     700 </span>            : int
+<span class="lineNum">     701 </span><span class="lineCov">          1 : main(int argc, char ** argv) {</span>
+<span class="lineNum">     702 </span><span class="lineCov">          1 :   if (argc &lt; 2) {</span>
+<span class="lineNum">     703 </span><span class="lineCov">          1 :     test_dini1();</span>
+<span class="lineNum">     704 </span><span class="lineCov">          1 :     test_dini2();</span>
+<span class="lineNum">     705 </span><span class="lineCov">          1 :     test_drea1();</span>
+<span class="lineNum">     706 </span><span class="lineCov">          1 :     test_drea2();</span>
+<span class="lineNum">     707 </span><span class="lineCov">          1 :     test_drea3();</span>
+<span class="lineNum">     708 </span><span class="lineCov">          1 :     test_dBas1();</span>
+<span class="lineNum">     709 </span><span class="lineCov">          1 :     test_dBas2();</span>
+<span class="lineNum">     710 </span><span class="lineCov">          1 :     test_dBas3();</span>
+<span class="lineNum">     711 </span><span class="lineCov">          1 :     test_dBas4();</span>
+<span class="lineNum">     712 </span><span class="lineCov">          1 :     test_dBas5();</span>
+<span class="lineNum">     713 </span><span class="lineCov">          1 :     test_dBas6();</span>
+<span class="lineNum">     714 </span><span class="lineCov">          1 :     test_dBas7();</span>
+<span class="lineNum">     715 </span><span class="lineCov">          1 :     test_dBas8();</span>
+<span class="lineNum">     716 </span><span class="lineCov">          1 :     test_dBas9();</span>
+<span class="lineNum">     717 </span><span class="lineCov">          1 :     test_dBas10();</span>
+<span class="lineNum">     718 </span><span class="lineCov">          1 :     test_dBas11();</span>
+<span class="lineNum">     719 </span><span class="lineCov">          1 :     test_drel1();</span>
+<span class="lineNum">     720 </span><span class="lineCov">          1 :     test_drel2();</span>
+<span class="lineNum">     721 </span><span class="lineCov">          1 :     test_drel3();</span>
+<span class="lineNum">     722 </span><span class="lineCov">          1 :     test_drel4();</span>
+<span class="lineNum">     723 </span><span class="lineCov">          1 :     test_drel5();</span>
+<span class="lineNum">     724 </span><span class="lineCov">          1 :     test_drel6();</span>
+<span class="lineNum">     725 </span><span class="lineCov">          1 :     test_drel7();</span>
+<span class="lineNum">     726 </span><span class="lineCov">          1 :     test_drel8();</span>
+<span class="lineNum">     727 </span><span class="lineCov">          1 :     test_dral1();</span>
+<span class="lineNum">     728 </span><span class="lineCov">          1 :     test_dral2();</span>
+<span class="lineNum">     729 </span><span class="lineCov">          1 :     test_dins1();</span>
+<span class="lineNum">     730 </span><span class="lineCov">          1 :     test_dins2();</span>
+<span class="lineNum">     731 </span><span class="lineCov">          1 :     test_dins3();</span>
+<span class="lineNum">     732 </span><span class="lineCov">          1 :     test_dins4();</span>
+<span class="lineNum">     733 </span><span class="lineCov">          1 :     test_dins5();</span>
+<span class="lineNum">     734 </span><span class="lineCov">          1 :     test_dins6();</span>
+<span class="lineNum">     735 </span><span class="lineCov">          1 :     test_dins7();</span>
+<span class="lineNum">     736 </span><span class="lineCov">          1 :     test_dlok1();</span>
+<span class="lineNum">     737 </span><span class="lineCov">          1 :     test_dlok2();</span>
+<span class="lineNum">     738 </span><span class="lineCov">          1 :     test_dlok3();</span>
+<span class="lineNum">     739 </span><span class="lineCov">          1 :     test_dlok4();</span>
+<span class="lineNum">     740 </span>            :   } else {
+<span class="lineNum">     741 </span><span class="lineNoCov">          0 :     eval(argc, argv);</span>
+<span class="lineNum">     742 </span>            :   }
+<span class="lineNum">     743 </span><span class="lineCov">          1 :   return 0;</span>
+<span class="lineNum">     744 </span>            : }
 </pre>
       </td>
     </tr>
