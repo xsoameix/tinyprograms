@@ -20,7 +20,7 @@ typedef int dd_t;
 #define DX SMAXT(dl_t)  /*       0xFF..FF(-1) is used as terminator in tail,  */
 #define DM UMAXT(dt_t)  /*       so -1 can not be used as character value     */
 /*                    *//* dd_t: Depending on what user want to stored,       */
-d_t * /*              *//*       the value can be a number or a struct,       */
+d_t * /* initialize   *//*       the value can be a number or a struct,       */
 dini(dl_t l) { /*     *//*       and its size can vary from 1 to 8 or more    */
   if (!l) return 0; /**//*       bytes. The default is int                    */
   d_t * d = malloc(l*DS+DS); dl_t i;
@@ -28,7 +28,7 @@ dini(dl_t l) { /*     *//*       and its size can vary from 1 to 8 or more    */
   return d[1].b = l, d[l].c = -1, d;
 }
 
-int
+int /* reallocate */
 drea(d_t ** d, dl_t * l) {
   dl_t i, b = *l, e, f, m; d_t * n = *d;
   if (b > DX - b || !(e = b*2+1, i = ++b)) return 1; /* len is max */
@@ -39,7 +39,7 @@ drea(d_t ** d, dl_t * l) {
   return 0;
 }
 
-int
+int /* find base */
 dbas(dl_t * a, dl_t n, d_t ** d, dl_t * l) {
   int e = 0; dl_t i = 0, j = 1, w;
   for (; (-i[*d].c > i || !(e=drea(d,l))) && (i = -i[*d].c) < a[0];);
@@ -51,7 +51,7 @@ dbas(dl_t * a, dl_t n, d_t ** d, dl_t * l) {
   return e ? -e : i-a[0];
 }
 
-int /* faster */
+int /* find base (faster) */
 dBas(dl_t * a, dl_t n, d_t ** d, dl_t * l) {
   int e = 0; dl_t i = 0, j, b, w;
   for (;;) {
@@ -68,7 +68,7 @@ dBas(dl_t * a, dl_t n, d_t ** d, dl_t * l) {
   }
 }
 
-void
+void /* relocate */
 drel(dl_t s, dl_t b, dl_t nb, dl_t * a, dl_t n, d_t * d, dl_t l) {
   dl_t i, j = 0, m, c, t, u, kb, k, p, h, e, x; /* e: end, x: max size */
   for (d[s].b = nb, i = 0; i < n; i++) {
@@ -83,10 +83,10 @@ drel(dl_t s, dl_t b, dl_t nb, dl_t * a, dl_t n, d_t * d, dl_t l) {
   }
 }
 
-dt_t *
+dt_t * /* initialize tail  */
 dinl(dl_t c) { return calloc(DT, c); }
 
-int
+int /* reallocate tail */
 dral(dt_t ** t, dl_t * c) {
   dt_t * n; dl_t b = *c, e;
   if (*c > DX - *c) return 3; /* no enough space to add tail */
@@ -101,7 +101,7 @@ dral(dt_t ** t, dl_t * c) {
 #define DSTR(a, n) do { for (x += y, j = 0; j < n && (j[x] = j[a] + 1); j++); \
                         *(dd_t*)(x+n+1)=g, *vl+=n+1+DD, d[t].b = ~y; } while(0)
 
-int /* v: tail, u: max, g: data, r: remain */
+int /* insert, v: tail, u: max, g: data, r: remain */
 dins(dt_t *a, dl_t n, dd_t g, d_t **rd, dl_t *l, dt_t **v, dl_t *vl, dl_t *vc) {
   dl_t i,j,s,c,tc,b,nb,t,k,m,p, y,w, h,h1[DM],h2[DM],l1,l2,li, *z, u, r;
   d_t *d; int e; dt_t *x;
@@ -141,7 +141,7 @@ dins(dt_t *a, dl_t n, dd_t g, d_t **rd, dl_t *l, dt_t **v, dl_t *vl, dl_t *vc) {
   }
 }
 
-int /* g: data */
+int /* lookup, g: data */
 dlok(dt_t * a, dl_t n, dd_t * g, d_t * d, dl_t l, dt_t * v) {
   dl_t i = 0, j, s = 0, c, b, t;
   for (;; s = t) {
